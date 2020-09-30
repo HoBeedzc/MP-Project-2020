@@ -6,8 +6,6 @@ from IPython import get_ipython
 # %% [markdown]
 # # week2 - 文本数据分析
 #
-# **姓名：刘泽群 班级：180817 学号：18377240**
-#
 # ## 任务描述
 #
 # 利用python数据结构完成简单的文本分析任务
