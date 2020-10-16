@@ -1,4 +1,5 @@
 import pickle
+from tqdm import tqdm
 
 
 def _load_info_(file_path):
@@ -17,14 +18,23 @@ def init_edge(file_path):
     :param file_path: 储存有边信息的文件路径
     :return: 包含边信息的列表,每个信息以字典形式存储
     '''
-    attr_list = ['out id', 'in id', 'type']
+    attr_list = ['out id', 'in id', 'power']
     edge_list = _load_info_(file_path)
     res = []
-    for i in edge_list:
+    flag = 1
+    for i in tqdm(edge_list):
         temp = {}
         for j in range(3):
             temp[attr_list[j]] = i[j]
-        res.append(temp)
+        temp['power'] = int(temp['power'])
+        for j in res:
+            flag = 1
+            if temp['out id'] == j['out id'] and temp['in id'] == j['in id']:
+                flag = 0
+                j['power'] += 1
+                break
+        if flag:
+            res.append(temp)
     return res
 
 
@@ -61,6 +71,6 @@ def load_graph(file_path):
     :return: 反序列化后的图文件
     '''
     fr = open(file_path, 'rb')
-    graph = pickle.load(file_path)
+    graph = pickle.load(fr)
     fr.close()
     return graph

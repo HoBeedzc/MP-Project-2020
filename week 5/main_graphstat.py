@@ -4,9 +4,17 @@ from tqdm import tqdm
 
 
 def main():
+    # 初始化节点并打印信息
     nodes = gs.init_node(r'.\data\newmovies.txt')
+    gs.print_node(nodes[10])
+
+    # 初始化图
     edges = gs.init_edge(r'.\data\newmovies.txt')
     a_graph = gs.init_graph(nodes, edges)
+
+    # 序列化与反序列化
+    gs.save_graph(a_graph, r'.\data\graph.graph')
+    a_graph = gs.load_graph(r'.\data\graph.graph')
 
     # 使用networkx储存网络 后续利用gephi画图
     G = nx.Graph()
