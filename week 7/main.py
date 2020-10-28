@@ -9,6 +9,9 @@ import matplotlib.pyplot as plt
 
 class Filter:
     '''
+    Filter class
+    properties: img, args
+    methods: get_img, set_img, filter
     '''
     def __init__(self, img: Image = '', **kwargs):
         self.img = img
@@ -16,11 +19,16 @@ class Filter:
 
     def get_img(self):
         '''
+        获取当前处理的图片
+        :return: 当前处理的图片
         '''
         return self.img
 
     def set_img(self, new_img):
         '''
+        更换要处理的图片
+        :param new_img: 要处理的图片
+        :return: None
         '''
         self.img = new_img
         if self.img.mode != 'RGB':
@@ -29,65 +37,91 @@ class Filter:
 
     def filter(self):
         '''
+        对图片进行滤波处理
+        :return: None
         '''
         pass
 
 
 class EdgeExtractionFilter(Filter):
     '''
+    EdgeExtractionFilter class
+    properties: img, args
+    methods: filter
     '''
     def __init__(self, img, **kwargs):
         super().__init__(img, **kwargs)
 
     def filter(self):
         '''
+        对图片进行边缘提取滤波处理
+        :return: None
         '''
         self.img = self.img.filter(ImageFilter.EDGE_ENHANCE)
-        pass
+        return None
 
 
 class SharpenFilter(Filter):
     '''
+    SharpenFilter class
+    properties: img, args
+    methods: filter
     '''
     def __init__(self, img, **kwargs):
         super().__init__(img, **kwargs)
 
     def filter(self):
         '''
+        对图片进行锐化滤波处理
+        :return: None
         '''
         self.img = self.img.filter(ImageFilter.SHARPEN)
-        pass
+        return None
 
 
 class BlurFilter(Filter):
     '''
+    BlurFilter class
+    properties: img, args
+    methods: filter
     '''
     def __init__(self, img, **kwargs):
         super().__init__(img, **kwargs)
 
     def filter(self):
         '''
+        对图片进行模糊滤波处理
+        :return: None
         '''
         self.img = self.img.filter(ImageFilter.BLUR)
-        pass
+        return None
 
 
 class SizeFilter(Filter):
     '''
+    SizeFilter class
+    properties: img, args
+    methods: filter
     '''
     def __init__(self, img, **kwargs):
         super().__init__(img, **kwargs)
 
     def filter(self):
         '''
+        对图片进行大小滤波处理
+        :return: None
         '''
         size_ = (self.args['rewidth'], self.args['relength'])
         self.img = self.img.resize(size_, Image.ANTIALIAS)
-        pass
+        return None
 
 
 class ImageShop:
     '''
+    ImageShop class
+    class properties: IMG_TYPE
+    properties: img_url, img_url_list, imgs, all_img_type
+    methods: get_path, set_path, load_images, batch_ps, display, save
     '''
     IMG_TYPE = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'ico']
 
@@ -240,6 +274,9 @@ Please check and try again.
 
 class TestImageShop:
     '''
+    TestImageShop class
+    properties: imgshop, img_type
+    methods: load_img_test, batch_and_display_test, save_img_test
     '''
     def __init__(self, img_type):
         self.imgshop = ImageShop('')
