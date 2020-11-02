@@ -378,6 +378,8 @@ class CO2DataVisualize(CO2DataAnalysis):
     instance properties: path
     methods: time_visualize, time_visualize_radar, 
              area_visualize, area_visualize_radar, area_visualize_map,
+             complex_visualize_time, complex_visualize_time_radar,
+             complex_visualize_area, complex_visualize_area_radar, complex_visualize_area_map
 
     '''
     def __init__(self, path):
@@ -827,9 +829,9 @@ class CO2DataVisualize(CO2DataAnalysis):
 class CO2DataFactory(CO2Data):
     '''
     CO2DataFactory class, a subclass for CO2Data
-    class properties:
-    instance properties:
-    methods:
+    class properties: PATH
+    instance properties: path
+    methods: creat_analysis, creat_visualize, creat_param
     '''
     PATH = r'./co2_demo/'
 
@@ -869,9 +871,8 @@ class CO2DataFactory(CO2Data):
 class CO2DataTest(CO2Data):
     '''
     CO2DataTest class, a subclass for CO2Data
-    class properties:
-    instance properties:
-    methods:
+    instance properties: factory, anal, visu
+    methods: analysis_test,visualize_test
     '''
     def __init__(self):
         self.factory = CO2DataFactory()
