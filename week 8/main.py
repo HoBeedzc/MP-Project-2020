@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
-from pyecharts import Map
+from pyecharts.charts import Map
+import numpy as np
 from tqdm import tqdm
 import random
 import xlrd
@@ -7,6 +8,7 @@ import os
 from matplotlib.font_manager import FontProperties
 plt.rcParams['font.sans-serif'] = ['SimHei']  # 步骤一（替换sans-serif字体）
 plt.rcParams['axes.unicode_minus'] = False  # 步骤二（解决坐标轴负数的负号显示问题）
+plt.style.use('ggplot')
 
 
 class NotNumError(ValueError):
@@ -41,6 +43,10 @@ class CO2DataSetNotFoundError(FileNotFoundError):
 
 class CO2Data:
     '''
+    CO2Data class
+    class properties:
+    instance properties:
+    methods:
     '''
     PROVINCE = [
         'Beijing', 'Tianjin', 'Hebei', 'Shanxi', 'InnerMongolia', 'Liaoning',
@@ -55,7 +61,7 @@ class CO2Data:
         '贵州', '云南', '陕西', '甘肃', '青海', '宁夏', '新疆'
     ]
     COLOR = [
-        '#FFFFFF',
+        '#FFAAFF',
         '#FFF68F',
         '#FFDEAD',
         '#FFC1C1',
@@ -155,6 +161,9 @@ class CO2Data:
 
     def set_path(self, new_path):
         '''
+        设置路径
+        :param new_path: 新的路径
+        :return: None
         '''
         try:
             self.__check_path(new_path)
@@ -166,12 +175,18 @@ class CO2Data:
 
     def get_path(self):
         '''
+        获取路径
+        :return: 当前路径
         '''
         return self.path
 
 
 class CO2DataAnalysis(CO2Data):
     '''
+    CO2DataAnalysis class, a subclass for CO2Data
+    class properties:
+    instance properties:
+    methods:
     '''
     def __init__(self, path):
         super().__init__(path)
@@ -194,6 +209,12 @@ class CO2DataAnalysis(CO2Data):
 
     def get_data(self, year, province, industry, ftype):
         '''
+        获取单个数据
+        :param year: 年份
+        :param procince: 省份
+        :param industry: 产业
+        :param ftype: 类型
+        :return: 对应的CO2排放量
         '''
         if type(industry) == str:  # 只传入一个
             industry = [industry]
@@ -220,6 +241,12 @@ class CO2DataAnalysis(CO2Data):
 
     def get_multiple_data(self, year, province, industry, ftype):
         '''
+        获取多个数据
+        :param year: 年份
+        :param procince: 省份
+        :param industry: 产业
+        :param ftype: 类型
+        :return: 对应的CO2排放量
         '''
         if type(industry) == str:  # 只传入一个
             industry = [industry]
@@ -238,12 +265,13 @@ class CO2DataAnalysis(CO2Data):
                     cell_temp = table.cell_value(
                         CO2DataAnalysis.INDUSTRY.index(i) + 3,
                         CO2DataAnalysis.TYPE.index(j) + 1)
-                    if type(cell_temp) == str:
+                    try:
+                        self.__check_data(cell_temp, year, k, i, j)
+                    except NotNumError as nerr:
+                        print(nerr.message)
                         cell_temp = 0
-                        # raise NotNumError(year, province, i, j)
-                    else:
-                        cell += cell_temp
-            res[i] = cell
+                    cell += cell_temp
+            res[k] = cell
         return res
 
     def time_analysis(self,
@@ -253,6 +281,13 @@ class CO2DataAnalysis(CO2Data):
                       industry_list=['Total Consumption'],
                       ftype_list=['Total']):
         '''
+        时间维度分析
+        :param start: 分析开始年份
+        :param end: 分析结束年份
+        :param province: 省份
+        :param industry_list: 产业列表
+        :param ftype_list: 类型列表
+        :return: 分析结果 以字典形式储存
         '''
         data = {}
         for i in tqdm(range(start, end + 1)):
@@ -268,6 +303,12 @@ class CO2DataAnalysis(CO2Data):
                       industry_list=['Total Consumption'],
                       ftype_list=['Total']):
         '''
+        空间维度分析
+        :param year: 年份
+        :param province_list: 省份列表
+        :param industry_list: 产业列表
+        :param ftype_list: 类型列表
+        :return: 分析结果 以字典形式储存
         '''
         if province_list == []:
             province_list = CO2DataAnalysis.PROVINCE
@@ -286,6 +327,13 @@ class CO2DataAnalysis(CO2Data):
                               industry_list=['Total Consumption'],
                               ftype_list=['Total']):
         '''
+        时空分析 以时间为第一维度
+        :param start: 分析开始年份
+        :param end: 分析结束年份
+        :param province_list: 省份列表
+        :param industry_list: 产业列表
+        :param ftype_list: 类型列表
+        :return: 分析结果 以字典形式储存
         '''
         if province_list == []:
             province_list = CO2DataAnalysis.PROVINCE
@@ -304,22 +352,31 @@ class CO2DataAnalysis(CO2Data):
                               industry_list=['Total Consumption'],
                               ftype_list=['Total']):
         '''
+        时空分析 以空间为第一维度
+        :param start: 分析开始年份
+        :param end: 分析结束年份
+        :param province_list: 省份列表
+        :param industry_list: 产业列表
+        :param ftype_list: 类型列表
+        :return: 分析结果 以字典形式储存
         '''
-        if province_list == []:
-            province_list = CO2DataAnalysis.PROVINCE
-        data = {}
-        for i in tqdm(province_list):
-            data[i] = {}
+        data = self.complex_analysis_time(start, end, province_list,
+                                          industry_list, ftype_list)
+        res = {}
+        for i in data[start].keys():
+            temp = {}
             for j in range(start, end + 1):
-                data[i][j] = self.get_data(year=j,
-                                           province=i,
-                                           industry=industry_list,
-                                           ftype=ftype_list)
-        return data
+                temp[j] = data[j][i]
+            res[i] = temp
+        return res
 
 
 class CO2DataVisualize(CO2DataAnalysis):
     '''
+    CO2DataVisualize class, a subclass for CO2DataAnalysis
+    class properties:
+    instance properties:
+    methods:
     '''
     def __init__(self, path):
         super().__init__(path)
@@ -331,11 +388,19 @@ class CO2DataVisualize(CO2DataAnalysis):
                        industry_list=['Total Consumption'],
                        ftype_list=['Total']):
         '''
+        时间分析可视化 折线图模式
+        :param start: 可视化开始年份
+        :param end: 可视化结束年份
+        :param province: 省份
+        :param industry_list: 产业列表
+        :param ftype_list: 类型列表
+        :return: None
         '''
         data = self.time_analysis(start, end, province, industry_list,
                                   ftype_list)
         x = list(data.keys())
         y = list(data.values())
+        plt.figure(figsize=(13, 15), dpi=100)
         plt.plot(x,
                  y,
                  'o-',
@@ -352,12 +417,61 @@ class CO2DataVisualize(CO2DataAnalysis):
         plt.savefig(r'./img/{}地区CO2部分排量-时间数据.png'.format(province))
         plt.show()
 
+    def time_visualize_radar(self,
+                             start=1997,
+                             end=2015,
+                             province='Beijing',
+                             industry_list=['Total Consumption'],
+                             ftype_list=['Total']):
+        '''
+        时间分析可视化 雷达图模式
+        :param start: 可视化开始年份
+        :param end: 可视化结束年份
+        :param province: 省份
+        :param industry_list: 产业列表
+        :param ftype_list: 类型列表
+        :return: None
+        '''
+        data = self.time_analysis(start, end, province, industry_list,
+                                  ftype_list)
+        x = list(data.keys())
+        y = list(data.values())
+        # 设置每个数据点的显示位置，在雷达图上用角度表示
+        angles = np.linspace(0, 2 * np.pi, len(y), endpoint=False)
+        # 拼接数据首尾，使图形中线条封闭
+        y = np.concatenate((y, [y[0]]))
+        angles = np.concatenate((angles, [angles[0]]))
+        # 绘图
+        fig = plt.figure()
+        # 设置为极坐标格式
+        ax = fig.add_subplot(111, polar=True)
+        # 绘制折线图
+        ax.plot(angles, y, 'o-', linewidth=2)
+        # 填充颜色
+        ax.fill(angles, y, alpha=0.25)
+        # 设置图标上的角度划分刻度，为每个数据点处添加标签
+        ax.set_thetagrids(angles * 180 / np.pi, x)
+        # 设置雷达图的范围
+        ax.set_ylim(0, max(y) + 3)
+        plt.title('{}地区CO2部分排量-时间数据'.format(province))
+        # 添加网格线
+        ax.grid(True)
+        plt.savefig(r'./img/{}地区CO2部分排量-时间数据-radar.png'.format(province))
+        plt.show()
+        pass
+
     def area_visualize(self,
                        year=1997,
                        province_list=[],
                        industry_list=['Total Consumption'],
                        ftype_list=['Total']):
         '''
+        空间分析可视化 饼图模式
+        :param year: 年份
+        :param province_list: 省份列表
+        :param industry_list: 产业列表
+        :param ftype_list: 类型列表
+        :return: None
         '''
         data = self.area_analysis(year, province_list, industry_list,
                                   ftype_list)
@@ -366,6 +480,7 @@ class CO2DataVisualize(CO2DataAnalysis):
         y = [i[1] for i in data]
         explode = [0.1] + [0
                            for _ in range(len(x) - 1)]  # 将某一块分割出来，值越大分割出的间隙越大
+        plt.figure(figsize=(13, 15), dpi=100)
         plt.pie(
             y,
             explode=explode,
@@ -379,12 +494,58 @@ class CO2DataVisualize(CO2DataAnalysis):
         plt.savefig(r'./img/{}年CO2部分排量-地区数据.png'.format(year))
         plt.show()
 
+    def area_visualize_radar(self,
+                             year=1997,
+                             province_list=[],
+                             industry_list=['Total Consumption'],
+                             ftype_list=['Total']):
+        '''
+        空间分析可视化 雷达图模式
+        :param year: 年份
+        :param province_list: 省份列表
+        :param industry_list: 产业列表
+        :param ftype_list: 类型列表
+        :return: None
+        '''
+        data = self.area_analysis(year, province_list, industry_list,
+                                  ftype_list)
+        x = list(data.keys())
+        y = list(data.values())
+        # 设置每个数据点的显示位置，在雷达图上用角度表示
+        angles = np.linspace(0, 2 * np.pi, len(y), endpoint=False)
+        # 拼接数据首尾，使图形中线条封闭
+        y = np.concatenate((y, [y[0]]))
+        angles = np.concatenate((angles, [angles[0]]))
+        # 绘图
+        fig = plt.figure()
+        # 设置为极坐标格式
+        ax = fig.add_subplot(111, polar=True)
+        # 绘制折线图
+        ax.plot(angles, y, 'o-', linewidth=2)
+        # 填充颜色
+        ax.fill(angles, y, alpha=0.25)
+        # 设置图标上的角度划分刻度，为每个数据点处添加标签
+        ax.set_thetagrids(angles * 180 / np.pi, x)
+        # 设置雷达图的范围
+        ax.set_ylim(0, max(y) + 3)
+        # 添加网格线
+        ax.grid(True)
+        plt.title('{}年CO2部分排量-地区数据'.format(year))
+        plt.savefig(r'./img/{}年CO2部分排量-地区数据-radar.png'.format(year))
+        plt.show()
+
     def area_visualize_map(self,
                            year=1997,
                            province_list=[],
                            industry_list=['Total Consumption'],
                            ftype_list=['Total']):
         '''
+        空间分析可视化 地图模式
+        :param year: 年份
+        :param province_list: 省份列表
+        :param industry_list: 产业列表
+        :param ftype_list: 类型列表
+        :return: None
         '''
         data = self.area_analysis(year, province_list, industry_list,
                                   ftype_list)
@@ -405,18 +566,28 @@ class CO2DataVisualize(CO2DataAnalysis):
                  maptype='china',
                  is_visualmap=True,
                  visual_text_color='#000')
-        map_.render(path=r'./data/{}年CO2部分排量-地区数据.html'.format(year))
+        map_.render(path=r'./map/{}年CO2部分排量-地区数据.html'.format(year))
 
     def complex_visualize_time(self,
                                start=1997,
                                end=2015,
                                province_list=[],
                                industry_list=['Total Consumption'],
-                               ftype_list=['Total']):
+                               ftype_list=['Total'],
+                               show_label=False):
         '''
+        多维数据可视化 按时间展现 折线图模式
+        :param start: 分析开始年份
+        :param end: 分析结束年份
+        :param province_list: 省份列表
+        :param industry_list: 产业列表
+        :param ftype_list: 类型列表
+        :param show_label: 是否显示标签 默认关闭
+        :return: None
         '''
         data = self.complex_analysis_area(start, end, province_list,
                                           industry_list, ftype_list)
+        plt.figure(figsize=(13, 15), dpi=100)
         for i in data.keys():
             x = list(data[i].keys())
             y = list(data[i].values())
@@ -426,16 +597,71 @@ class CO2DataVisualize(CO2DataAnalysis):
                      label='{}地区'.format(i),
                      color=CO2DataVisualize.COLOR[
                          CO2DataVisualize.PROVINCE.index(i)])
-            for a, b in zip(x, y):
-                plt.text(a, b, b, ha='right', va='top')
-            plt.text(x[-1], y[-1], i, ha='left', va='center')
+            if show_label:
+                for a, b in zip(x, y):
+                    plt.text(a, b, b, ha='right', va='top')
+            plt.text(x[-1],
+                     y[-1],
+                     CO2DataVisualize.PROVINCE_CHINESE[
+                         CO2DataVisualize.PROVINCE.index(i)],
+                     ha='left',
+                     va='center')
         plt.xlabel('时间')
-        plt.ylabel('数值')
+        plt.ylabel('排放量')
         plt.title('部分地区CO2排量-时间数据')
         plt.xticks(x, list(map(str, x)), rotation=30)
         plt.savefig(r'./img/部分地区CO2排量-时间数据.png')
         plt.show()
         return None
+
+    def complex_visualize_time_radar(self,
+                                     start=1997,
+                                     end=2015,
+                                     province_list=[],
+                                     industry_list=['Total Consumption'],
+                                     ftype_list=['Total']):
+        '''
+        多维数据可视化 按时间展现 雷达图模式
+        :param start: 分析开始年份
+        :param end: 分析结束年份
+        :param province_list: 省份列表
+        :param industry_list: 产业列表
+        :param ftype_list: 类型列表
+        :return: None
+        '''
+        data = self.complex_analysis_area(start, end, province_list,
+                                          industry_list, ftype_list)
+        x = list(data[list(data.keys())[0]].keys())
+        # 设置每个数据点的显示位置，在雷达图上用角度表示
+        angles = np.linspace(0, 2 * np.pi, len(x), endpoint=False)
+        angles = np.concatenate((angles, [angles[0]]))
+        fig = plt.figure(figsize=(10, 13), dpi=100)
+        for i in data.keys():
+            y = list(data[i].values())
+            y = np.concatenate((y, [y[0]]))
+            # 设置为极坐标格式
+            ax = fig.add_subplot(111, polar=True)
+            # 绘制折线图
+            ax.plot(angles,
+                    y,
+                    'o-',
+                    linewidth=2,
+                    label='{}地区'.format(i),
+                    color=CO2DataVisualize.COLOR[
+                        CO2DataVisualize.PROVINCE.index(i)])
+            # 填充颜色
+            ax.fill(angles, y, alpha=0.25)
+            # 设置图标上的角度划分刻度，为每个数据点处添加标签
+            ax.set_thetagrids(angles * 180 / np.pi, x)
+            # 设置雷达图的范围
+            ax.set_ylim(0, 1000)
+        # 添加标题
+        plt.title('部分地区CO2排量-时间数据')
+        plt.legend()
+        # 添加网格线
+        ax.grid(True)
+        plt.savefig(r'./img/部分地区CO2排量-时间数据-radar.png')
+        plt.show()
 
     def complex_visualize_ares(self,
                                start=1997,
@@ -445,6 +671,13 @@ class CO2DataVisualize(CO2DataAnalysis):
                                ftype_list=['Total'],
                                sorted_by=0):
         '''
+        多维数据可视化 按地区展现 饼图模式
+        :param start: 分析开始年份
+        :param end: 分析结束年份
+        :param province_list: 省份列表
+        :param industry_list: 产业列表
+        :param ftype_list: 类型列表
+        :return: None
         '''
         data = self.complex_analysis_time(start, end, province_list,
                                           industry_list, ftype_list)
@@ -462,9 +695,13 @@ class CO2DataVisualize(CO2DataAnalysis):
         while leng * widt < end - start:
             if lw:
                 leng += 1
+                lw = 0
             else:
                 widt += 1
+                lw = 1
         lw = 0
+        plt.figure(figsize=(13, 15), dpi=100)
+        plt.title('CO2部分排量-地区数据')
         for i in data.keys():
             lw += 1
             y = [data[i][j] for j in x]
@@ -472,13 +709,64 @@ class CO2DataVisualize(CO2DataAnalysis):
             plt.pie(
                 y,
                 explode=explode,
-                labels=x,
+                # labels=x,
                 colors=CO2DataVisualize.COLOR,
                 shadow=False,  # 无阴影设置
                 startangle=90,  # 逆时针起始角度设置
                 counterclock=False,  # 顺时针
                 rotatelabels=True)  # 标签指向轴心
+        plt.legend()
+        plt.savefig(r'./img/CO2部分排量-地区数据.png')
+        plt.show()
+
+    def complex_visualize_ares_radar(self,
+                                     start=1997,
+                                     end=2015,
+                                     province_list=[],
+                                     industry_list=['Total Consumption'],
+                                     ftype_list=['Total'],
+                                     sorted_by=0):
+        '''
+        多维数据可视化 按地区展现 雷达图模式
+        :param start: 分析开始年份
+        :param end: 分析结束年份
+        :param province_list: 省份列表
+        :param industry_list: 产业列表
+        :param ftype_list: 类型列表
+        :return: None
+        '''
+        data = self.complex_analysis_time(start, end, province_list,
+                                          industry_list, ftype_list)
+        x = list(data[list(data.keys())[0]].keys())
+        # 设置每个数据点的显示位置，在雷达图上用角度表示
+        angles = np.linspace(0, 2 * np.pi, len(x), endpoint=False)
+        angles = np.concatenate((angles, [angles[0]]))
+        fig = plt.figure(figsize=(10, 13), dpi=100)
+        cnt = 0
+        for i in data.keys():
+            cnt += 1
+            y = list(data[i].values())
+            y = np.concatenate((y, [y[0]]))
+            # 设置为极坐标格式
+            ax = fig.add_subplot(111, polar=True)
+            # 绘制折线图
+            ax.plot(angles,
+                    y,
+                    'o-',
+                    linewidth=2,
+                    label='{}年'.format(i),
+                    color=CO2DataVisualize.COLOR[cnt])
+            # 填充颜色
+            ax.fill(angles, y, alpha=0.25)
+            # 设置图标上的角度划分刻度，为每个数据点处添加标签
+            ax.set_thetagrids(angles * 180 / np.pi, x)
+            # 设置雷达图的范围
+            ax.set_ylim(0, 900)
+        # 添加标题
         plt.title('CO2部分排量-地区数据')
+        plt.legend()
+        # 添加网格线
+        ax.grid(True)
         plt.savefig(r'./img/CO2部分排量-地区数据.png')
         plt.show()
 
@@ -489,6 +777,13 @@ class CO2DataVisualize(CO2DataAnalysis):
                                    industry_list=['Total Consumption'],
                                    ftype_list=['Total']):
         '''
+        多维数据可视化 按地区展现 地图模式
+        :param start: 分析开始年份
+        :param end: 分析结束年份
+        :param province_list: 省份列表
+        :param industry_list: 产业列表
+        :param ftype_list: 类型列表
+        :return: None
         '''
         data = self.complex_analysis_time(start, end, province_list,
                                           industry_list, ftype_list)
@@ -501,20 +796,38 @@ class CO2DataVisualize(CO2DataAnalysis):
                    '包含省份:{}'.format(province_list),
                    width=1700,
                    height=1000)
+
+        total = []
+        for i in data[start].keys():
+            temp = 0
+            for j in range(start, end + 1):
+                temp += data[j][i]
+            total.append(temp)
+        '''
+        map_.add('',
+                 x_c,
+                 total,
+                 visual_range=[min(total), max(total)],
+                 maptype='china')
+        '''
         for i in data.keys():
             y = list(data[i].values())
-            map_.add("{}年".format(i),
+            map_.add('{}年'.format(i),
                      x_c,
                      y,
+                     is_visualmap=True,
                      visual_range=[min(y), max(y)],
                      maptype='china',
-                     is_visualmap=True,
                      visual_text_color='#000')
-        map_.render(path=r'./data/CO2部分排量-地区数据.html')
+        map_.render(path=r'./map/CO2部分排量-地区数据.html')
 
 
 class CO2DataFactory(CO2Data):
     '''
+    CO2DataFactory class, a subclass for CO2Data
+    class properties:
+    instance properties:
+    methods:
     '''
     PATH = r'./co2_demo/'
 
@@ -525,16 +838,22 @@ class CO2DataFactory(CO2Data):
 
     def creat_analysis(self):
         '''
+        创建数据分析类实例
+        :return: 数据分析类实例
         '''
         return CO2DataAnalysis(self.PATH)
 
     def creat_visualize(self):
         '''
+        创建数据可视化类实例
+        :return: 数据可视化类实例
         '''
         return CO2DataVisualize(self.PATH)
 
     def creat_param(self):
         '''
+        随机创建一组数据参数
+        :return: 一组随机的数据参数
         '''
         choice = {
             'year': random.choice(CO2DataFactory.TIME),
@@ -547,6 +866,10 @@ class CO2DataFactory(CO2Data):
 
 class CO2DataTest(CO2Data):
     '''
+    CO2DataTest class, a subclass for CO2Data
+    class properties:
+    instance properties:
+    methods:
     '''
     def __init__(self):
         self.factory = CO2DataFactory()
@@ -555,6 +878,8 @@ class CO2DataTest(CO2Data):
 
     def analysis_test(self):
         '''
+        数据分析测试
+        :return: None
         '''
         print()
         print('Time analysis:')
@@ -566,15 +891,21 @@ class CO2DataTest(CO2Data):
 
     def visualize_test(self):
         '''
+        数据可视化测试
+        :return: None
         '''
         print()
         print('Time visualize:')
         self.visu.time_visualize()
+        self.visu.time_visualize_radar()
         self.visu.complex_visualize_time()
+        self.visu.complex_visualize_time_radar()
         print()
         print('Area visualize:')
         self.visu.area_visualize()
+        self.visu.area_visualize_radar()
         self.visu.complex_visualize_ares()
+        self.visu.complex_visualize_ares_radar()
         print()
         print('Area visualize map:')
         self.visu.area_visualize_map()
