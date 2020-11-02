@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from pyecharts.charts import Map
+from pyecharts import Map
 import numpy as np
 from tqdm import tqdm
 import random
@@ -185,8 +185,8 @@ class CO2DataAnalysis(CO2Data):
     '''
     CO2DataAnalysis class, a subclass for CO2Data
     instance properties: path
-    methods: get_data, get_multiple_data, 
-             time_analysis, area_analysis, 
+    methods: get_data, get_multiple_data,
+             time_analysis, area_analysis,
              complex_analysis_time, complex_analysis_area
     '''
     def __init__(self, path):
@@ -667,62 +667,6 @@ class CO2DataVisualize(CO2DataAnalysis):
         plt.savefig(r'./img/部分地区CO2排量-时间数据-radar.png')
         plt.show()
 
-    def complex_visualize_ares(self,
-                               start=1997,
-                               end=2015,
-                               province_list=[],
-                               industry_list=['Total Consumption'],
-                               ftype_list=['Total'],
-                               sorted_by=0):
-        '''
-        多维数据可视化 按地区展现 饼图模式
-        :param start: 分析开始年份
-        :param end: 分析结束年份
-        :param province_list: 省份列表
-        :param industry_list: 产业列表
-        :param ftype_list: 类型列表
-        :return: None
-        '''
-        data = self.complex_analysis_time(start, end, province_list,
-                                          industry_list, ftype_list)
-        if sorted_by == 0:
-            sorted_by = start
-        data_sort = sorted(data[sorted_by].items(),
-                           key=lambda x: x[-1],
-                           reverse=True)
-        x = [i[0] for i in data_sort]
-        explode = [0.1] + [0
-                           for _ in range(len(x) - 1)]  # 将某一块分割出来，值越大分割出的间隙越大
-
-        leng, widt = 0, 0
-        lw = 0
-        while leng * widt < end - start:
-            if lw:
-                leng += 1
-                lw = 0
-            else:
-                widt += 1
-                lw = 1
-        lw = 0
-        plt.figure(figsize=(13, 15), dpi=100)
-        plt.title('CO2部分排量-地区数据')
-        for i in data.keys():
-            lw += 1
-            y = [data[i][j] for j in x]
-            plt.subplot(leng, widt, lw)
-            plt.pie(
-                y,
-                explode=explode,
-                # labels=x,
-                colors=CO2DataVisualize.COLOR,
-                shadow=False,  # 无阴影设置
-                startangle=90,  # 逆时针起始角度设置
-                counterclock=False,  # 顺时针
-                rotatelabels=True)  # 标签指向轴心
-        plt.legend()
-        plt.savefig(r'./img/CO2部分排量-地区数据.png')
-        plt.show()
-
     def complex_visualize_ares_radar(self,
                                      start=1997,
                                      end=2015,
@@ -907,7 +851,6 @@ class CO2DataTest(CO2Data):
         print('Area visualize:')
         self.visu.area_visualize()
         self.visu.area_visualize_radar()
-        self.visu.complex_visualize_ares()
         self.visu.complex_visualize_ares_radar()
         print()
         print('Area visualize map:')
