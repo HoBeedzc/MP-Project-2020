@@ -44,9 +44,9 @@ class CO2DataSetNotFoundError(FileNotFoundError):
 class CO2Data:
     '''
     CO2Data class
-    class properties:
-    instance properties:
-    methods:
+    class properties: PROVINCE, PROVINCE_CHINESE, COLOR, TIME, TYPE,INDUSTRY
+    instance properties: path
+    methods: set_path, get_path
     '''
     PROVINCE = [
         'Beijing', 'Tianjin', 'Hebei', 'Shanxi', 'InnerMongolia', 'Liaoning',
@@ -184,9 +184,10 @@ class CO2Data:
 class CO2DataAnalysis(CO2Data):
     '''
     CO2DataAnalysis class, a subclass for CO2Data
-    class properties:
-    instance properties:
-    methods:
+    instance properties: path
+    methods: get_data, get_multiple_data, 
+             time_analysis, area_analysis, 
+             complex_analysis_time, complex_analysis_area
     '''
     def __init__(self, path):
         super().__init__(path)
@@ -374,9 +375,10 @@ class CO2DataAnalysis(CO2Data):
 class CO2DataVisualize(CO2DataAnalysis):
     '''
     CO2DataVisualize class, a subclass for CO2DataAnalysis
-    class properties:
-    instance properties:
-    methods:
+    instance properties: path
+    methods: time_visualize, time_visualize_radar, 
+             area_visualize, area_visualize_radar, area_visualize_map,
+
     '''
     def __init__(self, path):
         super().__init__(path)
