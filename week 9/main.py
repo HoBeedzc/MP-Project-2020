@@ -155,10 +155,21 @@ class CCCDecoratorTools:
         pass
 
     @staticmethod
-    def check_path():
+    def check_path(path):
         '''
         '''
-        pass
+        def decorator(func):  # 高阶函数
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+                if not os.path.exists(path):
+                    print('{} is not exist!'.format(path))
+                    print('Make a folder for {} ...'.format(path))
+                    os.makedirs(path)
+                return func(*args, **kwargs)
+
+            return wrapper
+
+        return decorator
 
     @staticmethod
     def __check_music_file(file):
