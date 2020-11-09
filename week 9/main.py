@@ -102,7 +102,7 @@ class CorpusChristiClockCore(CorpusChristiClockBase):
         pass
 
     def big_data_pickle(self,
-                        file_path='BigDataPickle.ccc',
+                        file_path=r'BigDataPickle.ccc',
                         is_relative_path=True):
         '''
         '''
@@ -113,7 +113,7 @@ class CorpusChristiClockCore(CorpusChristiClockBase):
         pass
 
     def big_data_unpickle(self,
-                          file_path='BigDataPickle.ccc',
+                          file_path=r'BigDataPickle.ccc',
                           is_relative_path=True):
         '''
         '''
@@ -213,9 +213,33 @@ class CCCDecoratorTools:
 class CCCProxy(CorpusChristiClockBase):
     '''
     '''
-    def __init__(self):
+    def __init__(self,*args,**kwargs):
+        self.ccc = CorpusChristiClockCore(*args,**kwargs)
+        pass
+    
+    def big_data_generate(self):
+        '''
+        '''
+        self.ccc.big_data_generate()
         pass
 
+    def big_data_traversal(self,func,show = False):
+        '''
+        '''
+        self.ccc.big_data_traversal(func,show = show)
+        pass
+
+    def big_data_pickle(self,file_path = r'BigDataPickle.ccc',is_relative_path=True):
+        '''
+        '''
+        self.ccc.big_data_pickle(file_path = file_path,is_relative_path = is_relative_path)
+        pass
+
+    def big_data_unpickle(self,file_path = r'BigDataPickle.ccc',is_relative_path = True):
+        '''
+        '''
+        self.ccc.big_data_unpickle(file_path=file_path,is_relative_path=is_relative_path)
+        pass
 
 class CCCTest:
     '''
