@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import time
 import pickle
 from tqdm import tqdm
 from faker import Faker
@@ -96,9 +97,9 @@ class CorpusChristiClockCore(CorpusChristiClockBase):
             raise FuncNotCallableError(
                 '{} is not a callable object!'.format(func))
         for i in range(self.size):
-            self.big_data[i] = func(self.big_data[i])
+            self._big_data[i] = func(self._big_data[i])
             if show:
-                print(self.big_data[i])
+                print(self._big_data[i])
         pass
 
     def big_data_pickle(self,
@@ -134,7 +135,14 @@ class CCCDecoratorTools:
     def show_running_time(func):
         '''
         '''
-        pass
+        @wraps(func)
+        def wrapper(*args,**kwargs):
+            start = time.time()
+            fun_res = func(*args,**kwargs)
+            end = time.time()
+            print('func {} running time : {} sec.'.format(func.__name__,end-start))
+            return fun_res
+        return wrapper
 
     @staticmethod
     def show_process_rate():
@@ -251,8 +259,36 @@ class CCCProxy(CorpusChristiClockBase):
 class CCCTest:
     '''
     '''
-    def __init__(self):
+    def __init__(self,*args,**kwargs):
+        self.cccp = CCCProxy(*args,**kwargs)
         pass
+
+    def generate_test(self):
+        '''
+        '''
+        pass
+
+    def traversal_test(self):
+        '''
+        '''
+        pass
+
+    def pickle_test(self):
+        '''
+        '''
+        pass
+
+    def unpickle_test(self):
+        '''
+        '''
+        pass
+
+def test():
+    ctest = CCCTest()
+    ctest.generate_test()
+    ctest.traversal_test()
+    ctest.pickle_test()
+    ctest.unpickle_test()
 
 
 def main():
