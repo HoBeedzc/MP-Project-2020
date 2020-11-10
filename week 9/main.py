@@ -3,6 +3,8 @@ import re
 import sys
 import time
 import pickle
+import line_profiler as lp
+import memory_profiler as mp
 from tqdm import tqdm
 from faker import Faker
 from functools import wraps
@@ -136,12 +138,14 @@ class CCCDecoratorTools:
         '''
         '''
         @wraps(func)
-        def wrapper(*args,**kwargs):
+        def wrapper(*args, **kwargs):
             start = time.time()
-            fun_res = func(*args,**kwargs)
+            fun_res = func(*args, **kwargs)
             end = time.time()
-            print('func {} running time : {} sec.'.format(func.__name__,end-start))
+            print('func {} running time : {} sec.'.format(
+                func.__name__, end - start))
             return fun_res
+
         return wrapper
 
     @staticmethod
@@ -259,8 +263,8 @@ class CCCProxy(CorpusChristiClockBase):
 class CCCTest:
     '''
     '''
-    def __init__(self,*args,**kwargs):
-        self.cccp = CCCProxy(*args,**kwargs)
+    def __init__(self, *args, **kwargs):
+        self.cccp = CCCProxy(*args, **kwargs)
         pass
 
     def generate_test(self):
@@ -282,6 +286,7 @@ class CCCTest:
         '''
         '''
         pass
+
 
 def test():
     ctest = CCCTest()
