@@ -30,6 +30,8 @@ class PathParamNotFoundError(ValueError):
 
 class CorpusChristiClockBase():
     '''
+    CorpusChristiClockBase class
+    instance properties: size, path, faker
     '''
     def __init__(self, size=1000000, path=r'./rundata/'):
         self._size = size
@@ -83,6 +85,9 @@ class CorpusChristiClockBase():
 
 class CorpusChristiClockCore(CorpusChristiClockBase):
     '''
+    CorpusChristiClockCore class
+    instance properties: size, path, faker
+    methods: big_data_generate, big_data_traversal, big_data_pickle, big_data_unpickle
     '''
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -90,6 +95,8 @@ class CorpusChristiClockCore(CorpusChristiClockBase):
 
     def big_data_generate(self):
         '''
+        大型数据结构的创建
+        :return: None
         '''
         print('Generate Data with Size {}'.format(self.size))
         self._big_data = []
@@ -99,6 +106,10 @@ class CorpusChristiClockCore(CorpusChristiClockBase):
 
     def big_data_traversal(self, func=str, show=False):
         '''
+        大型数据结构的遍历
+        :param func: 遍历时要执行的函数
+        :param show: 是否输出执行结果
+        :return: None
         '''
         if not callable(func):
             raise FuncNotCallableError(
@@ -113,6 +124,10 @@ class CorpusChristiClockCore(CorpusChristiClockBase):
                         file_path='BigDataPickle.ccc',
                         is_relative_path=True):
         '''
+        大型数据结构序列化
+        :param file_path: 序列化文件路径
+        :param is_relative_path: 是否为相对路径
+        :return: None
         '''
         if is_relative_path:
             file_path = self.path + file_path
@@ -124,6 +139,10 @@ class CorpusChristiClockCore(CorpusChristiClockBase):
                           file_path='BigDataPickle.ccc',
                           is_relative_path=True):
         '''
+        大型数据结构反序列化
+        :param file_path: 序列化文件路径
+        :param is_relative_path: 是否为相对路径
+        :return: None
         '''
         if is_relative_path:
             file_path = self.path + file_path
@@ -134,6 +153,9 @@ class CorpusChristiClockCore(CorpusChristiClockBase):
 
 class CCCDecoratorTools:
     '''
+    CCCDecoratorTools class
+    instance properties: None
+    static methods: show_running_time, show_run_info, check_path, play_music_after_running
     '''
     def __init__(self):
         pass
@@ -141,6 +163,9 @@ class CCCDecoratorTools:
     @staticmethod
     def show_running_time(func):
         '''
+        显示函数的运行时间
+        :param func:要装饰的函数
+        :return: 装饰器
         '''
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -156,6 +181,9 @@ class CCCDecoratorTools:
     @staticmethod
     def show_run_info(func):
         '''
+        显示函数逐行语句的运行时间
+        :param func:要装饰的函数
+        :return: 装饰器
         '''
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -171,6 +199,9 @@ class CCCDecoratorTools:
     @staticmethod
     def check_path(path):
         '''
+        检查函数路径是否正确
+        :param path: 要检查的函数中对应的路径参数
+        :return: 装饰器
         '''
         def decorator(func):  # 高阶函数
             @wraps(func)
@@ -224,6 +255,9 @@ class CCCDecoratorTools:
     @staticmethod
     def play_music_after_running(mfile):
         '''
+        函数运行结束后播放一条音乐
+        :param mfile: 音乐文件的路径
+        :return: 装饰器
         '''
         def decorator(func):  # 高阶函数
             @wraps(func)
@@ -247,6 +281,9 @@ class CCCDecoratorTools:
 
 class CCCProxy(CorpusChristiClockBase):
     '''
+    CCCProxy class
+    instance properties: size, path, faker
+    methods: big_data_generate, big_data_traversal, big_data_pickle, big_data_unpickle
     '''
     def __init__(self, *args, **kwargs):
         self.ccc = CorpusChristiClockCore(*args, **kwargs)
@@ -255,6 +292,8 @@ class CCCProxy(CorpusChristiClockBase):
     # test run tqdm
     def big_data_generate(self):
         '''
+        大型数据结构的创建
+        :return: None
         '''
         print('Generate Data with Size {}'.format(self.ccc.size))
         self.ccc._big_data = []
@@ -267,6 +306,10 @@ class CCCProxy(CorpusChristiClockBase):
     @CCCDecoratorTools.show_run_info
     def big_data_traversal(self, func=str, show=False):
         '''
+        大型数据结构的遍历
+        :param func: 遍历时要执行的函数
+        :param show: 是否输出执行结果
+        :return: None
         '''
         self.ccc.big_data_traversal(func, show=show)
         pass
@@ -277,6 +320,10 @@ class CCCProxy(CorpusChristiClockBase):
                         file_path=r'BigDataPickle.ccc',
                         is_relative_path=True):
         '''
+        大型数据结构序列化
+        :param file_path: 序列化文件路径
+        :param is_relative_path: 是否为相对路径
+        :return: None
         '''
         self.ccc.big_data_pickle(file_path=file_path,
                                  is_relative_path=is_relative_path)
@@ -288,6 +335,10 @@ class CCCProxy(CorpusChristiClockBase):
                           file_path='BigDataPickle.ccc',
                           is_relative_path=True):
         '''
+        大型数据结构反序列化
+        :param file_path: 序列化文件路径
+        :param is_relative_path: 是否为相对路径
+        :return: None
         '''
         self.ccc.big_data_unpickle(file_path=file_path,
                                    is_relative_path=is_relative_path)
@@ -296,6 +347,11 @@ class CCCProxy(CorpusChristiClockBase):
 
 class CCCTest:
     '''
+    CCCTest class
+    instance properties: cccp
+    methods: tqdm_test, time_test, check_path_test, memory_test
+    class methods: generate_example
+    static methods: play_music_test
     '''
     def __init__(self, *args, **kwargs):
         self.cccp = CCCProxy(*args, **kwargs)
@@ -303,24 +359,32 @@ class CCCTest:
 
     def tqdm_test(self):
         '''
+        进度条测试
+        :return: None
         '''
         self.cccp.big_data_generate()
         pass
 
     def time_test(self):
         '''
+        函数运行时间测试
+        :return: None
         '''
         self.cccp.big_data_traversal(func=str)
         pass
 
     def check_path_test(self):
         '''
+        函数路径检查测试
+        :return: None
         '''
         self.cccp.big_data_pickle()
         pass
 
     def memory_test(self):
         '''
+        函数内存占用测试测试
+        :return: None
         '''
         self.cccp.big_data_unpickle()
         pass
@@ -328,6 +392,8 @@ class CCCTest:
     @classmethod
     def generate_example(cls, *args, **kwargs):
         '''
+        创建CCCTest类实例
+        :return: 类实例
         '''
         print("generate a example from class {}".format(cls.__name__))
         return cls(*args, **kwargs)
@@ -336,6 +402,8 @@ class CCCTest:
     @CCCDecoratorTools.play_music_after_running(r'./music demo/demo.mp3')
     def play_music_test(*args, **kwargs):
         '''
+        播放音乐测试
+        :return: None
         '''
         ex = CCCTest.generate_example(*args, **kwargs)
         print()
@@ -354,7 +422,7 @@ class CCCTest:
 
 
 def main():
-    CCCTest.play_music_test(size=10)
+    CCCTest.play_music_test(size=100000)
     pass
 
 
