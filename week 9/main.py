@@ -221,14 +221,14 @@ class CCCDecoratorTools:
                             [path_index]).split('=')[-1].strip("'")
                         kwargs[path] = path_value
                 try:
-                    real_path = re.search(r'[.A-Za-z0-9/]*/',
+                    real_path = re.search(r'[.A-Za-z0-9/ ]*/',
                                           kwargs[path]).group(0)
                 except AttributeError:
                     real_path = r'./'
-                if not os.path.exists(real_path):
+                if not os.path.exists(r'./rundata/' + real_path):
                     print('Path {} is not exist!'.format(real_path))
                     print('Make a folder for {} ...'.format(real_path))
-                    os.makedirs(real_path)
+                    os.makedirs(r'./rundata/' + real_path)
                 else:
                     print('Path {} exist!'.format(real_path))
                 return func(*args, **kwargs)
@@ -373,12 +373,12 @@ class CCCTest:
         self.cccp.big_data_traversal(func=str)
         pass
 
-    def check_path_test(self):
+    def check_path_test(self, file_path=r'BigDataPickle.ccc'):
         '''
         函数路径检查测试
         :return: None
         '''
-        self.cccp.big_data_pickle()
+        self.cccp.big_data_pickle(file_path=file_path)
         pass
 
     def memory_test(self):
@@ -413,8 +413,11 @@ class CCCTest:
         print('Run Time Test...')
         ex.time_test()
         print()
-        print('Check Path Test...')
+        print('Check Path Test...exist')
         ex.check_path_test()
+        print()
+        print('Check Path Test...not exist')
+        ex.check_path_test(file_path=r'not exist/BigDataPickle.ccc')
         print()
         print('Memory Usage Test...')
         ex.memory_test()
@@ -422,7 +425,7 @@ class CCCTest:
 
 
 def main():
-    CCCTest.play_music_test(size=100000)
+    CCCTest.play_music_test(size=1000000)
     pass
 
 
