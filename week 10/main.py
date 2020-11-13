@@ -70,6 +70,21 @@ class FaceDataSet:
         '''
         pass
 
+class BaseTest:
+    '''
+    '''
+    def __init__(self):
+        pass
+
+    def rw_test(self):
+        '''
+        '''
+        pass
+
+    def fdw_test(self):
+        '''
+        '''
+        pass
 
 def main():
     pass
