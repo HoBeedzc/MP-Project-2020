@@ -12,6 +12,9 @@ class ImageNotExistError(FileNotFoundError):
 
 class RamdonWalk:
     '''
+    RamdonWalk class
+    instance properties: mu, x0, sigma2, N
+    methods: walk, show_info, plot
     '''
     def __init__(self, mu, x0, sigma2, N):
         self._mu = mu
@@ -69,6 +72,8 @@ class RamdonWalk:
 
     def walk(self):
         '''
+        启动随机游走
+        :return: 以迭代器方式返回一系列游走的值
         '''
         cnt = 0
         wt = random.gauss(0, sigma=self.sigma2)
@@ -83,6 +88,8 @@ class RamdonWalk:
 
     def show_info(self):
         '''
+        输出随机游走参数
+        :return: 参数列表
         '''
         paramstr = 'mu:{} x0:{} sigma2:{} N:{}'.format(self.mu, self.x0,
                                                        self.sigma2, self.N)
@@ -91,6 +98,9 @@ class RamdonWalk:
 
     def plot(self):
         '''
+        画出随机游走图像
+        :return: None
+        :Notice: 该类每个实例仅可生成一次生成器，使用该方法后该实例将无法使用，请谨慎使用。
         '''
         walk = self.walk()
         x = [i + 1 for i in range(self.N)]
@@ -105,6 +115,10 @@ class RamdonWalk:
 
 class RamdonWalks:
     '''
+    RamdonWalks class
+    instance properties: walks_num
+    methods: walks, plots
+    static methods: creat_param_for_walk
     '''
     def __init__(self, walks_num):
         self._num = walks_num
@@ -125,6 +139,9 @@ class RamdonWalks:
     @staticmethod
     def creat_param_for_walk(N=0):
         '''
+        为随机游走序列随机生成参数
+        :param N: 随机游走的长度 （为了控制多个序列的长度一致，因此这个参数需要外部传入）
+        :return: 参数字典
         '''
         param_dict = {}
         param_dict['mu'] = random.uniform(1, 10)
@@ -135,6 +152,8 @@ class RamdonWalks:
 
     def walks(self):
         '''
+        产生N个随机游走序列
+        :return: 一个迭代器，该迭代器的每一项均为元组，第i项包含了N个随机游走序列的第i项
         '''
         self._walk_list = []
         N = 500
@@ -149,6 +168,8 @@ class RamdonWalks:
 
     def plots(self):
         '''
+        画出随机游走图像
+        :return: None
         '''
         walk_zip = list(self.walks())
         x = [i + 1 for i in range(len(walk_zip))]
@@ -164,6 +185,10 @@ class RamdonWalks:
 
 class FaceDataSet:
     '''
+    FaceDataSet class
+    class properties: IMGINFO_DICT
+    instance properties: path, start, end
+    methods: show_ndarray
     '''
     IMGINFO_DICT = {'ftw': 750, 'fty': 2000, 'mtw': 750, 'mty': 2000}
 
@@ -188,8 +213,6 @@ class FaceDataSet:
                  ipath=r'./dataset/FaceImages/Images/',
                  start=0,
                  end=5500):
-        '''
-        '''
         self._path = ipath
         self._check_path()
         self._start = start
@@ -237,6 +260,9 @@ class FaceDataSet:
 
     def show_ndarray(self, show=False):
         '''
+        读取图片并展示转换后的数组
+        :param show: 控制是否输出数组和显示图片
+        :return: 返回当前打开图片的路径
         '''
         if self.cnt <= self.IMGINFO_DICT['ftw']:
             self.cntname = self.path + r'ftw{}.jpg'.format(self.cnt)
@@ -263,14 +289,10 @@ class FaceDataSet:
         return self.cntname
 
     def __iter__(self):
-        '''
-        '''
         self.cnt = self.start
         return self
 
     def __next__(self):
-        '''
-        '''
         if self.cnt < self.end:
             self.cnt += 1
             return self.show_ndarray(show=True)
@@ -280,14 +302,19 @@ class FaceDataSet:
 
 class BaseTest:
     '''
+    BaseTest
+    instance properties: rw,rws,fdw
+    method: rw_test, rws_test, fdw_test
     '''
     def __init__(self):
-        self.rws = RamdonWalks(random.randint(2, 8))
+        self.rws = RamdonWalks(random.randint(5, 10))
         self.rw = RamdonWalk(**self.rws.creat_param_for_walk(N=500))
         self.fdw = FaceDataSet(start=100, end=110)
 
     def rw_test(self):
         '''
+        测试单随机游走序列
+        :return: None
         '''
         print('Show random walk info...')
         self.rw.show_info()
@@ -297,12 +324,16 @@ class BaseTest:
 
     def rws_test(self):
         '''
+        测试多随机游走序列
+        :return: None
         '''
         self.rws.plots()
         pass
 
     def fdw_test(self):
         '''
+        测试人脸数据集读取
+        :return: None
         '''
         for i in self.fdw:
             print('Open {} successfully!'.format(i))
