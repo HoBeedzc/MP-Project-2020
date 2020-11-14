@@ -97,6 +97,9 @@ class RamdonWalk:
         y = [i for i in walk]
         plt.plot(x, y)
         plt.text(0, max(y), self.show_info())
+        plt.xlabel('Time')
+        plt.ylabel('Value')
+        plt.title('A Random Walk')
         plt.show()
 
 
@@ -153,12 +156,17 @@ class RamdonWalks:
             y = [j[i] for j in walk_zip]
             plt.plot(x, y, label='walk {}'.format(i))
         plt.legend()
+        plt.xlabel('Time')
+        plt.ylabel('Value')
+        plt.title('Random Walks')
         plt.show()
 
 
 class FaceDataSet:
     '''
     '''
+    IMGINFO_DICT = {'ftw': 750, 'fty': 2000, 'mtw': 750, 'mty': 2000}
+
     def _check_path(self):
         flag = 1
         for i in os.listdir(self.path):
@@ -227,12 +235,32 @@ class FaceDataSet:
     def end(self):
         self._end = 5500
 
-    def show_ndarray(self):
+    def show_ndarray(self, show=False):
         '''
         '''
-        self.cntimg = Image.open(self.path + r'ftw{}.jpg'.format(self.cnt))
+        if self.cnt <= self.IMGINFO_DICT['ftw']:
+            self.cntname = self.path + r'ftw{}.jpg'.format(self.cnt)
+            self.cntimg = Image.open(self.cntname)
+        elif self.cnt <= self.IMGINFO_DICT['ftw'] + self.IMGINFO_DICT['fty']:
+            self.cntname = self.path + r'fty{}.jpg'.format(
+                self.cnt - self.IMGINFO_DICT['ftw'])
+            self.cntimg = Image.open(self.cntname)
+        elif self.cnt <= self.IMGINFO_DICT['ftw'] + self.IMGINFO_DICT[
+                'fty'] + self.IMGINFO_DICT['mtw']:
+            self.cntname = self.path + r'mtw{}.jpg'.format(
+                self.cnt - self.IMGINFO_DICT['ftw'] - self.IMGINFO_DICT['fty'])
+            self.cntimg = Image.open(self.cntname)
+        else:
+            self.cntname = self.path + r'mty{}.jpg'.format(
+                self.cnt - self.IMGINFO_DICT['ftw'] -
+                self.IMGINFO_DICT['fty'] - self.IMGINFO_DICT['mtw'])
+            self.cntimg = Image.open(self.cntname)
         self.cntarray = np.array(self.cntimg)
-        return self.cntarray
+        if show:
+            print(self.cntarray)
+            plt.imshow(self.cntimg)
+            plt.show()
+        return self.cntname
 
     def __iter__(self):
         '''
@@ -245,7 +273,7 @@ class FaceDataSet:
         '''
         if self.cnt < self.end:
             self.cnt += 1
-            return self.show_ndarray()
+            return self.show_ndarray(show=True)
         else:
             raise StopIteration('全部加载完成！')
 
@@ -256,7 +284,7 @@ class BaseTest:
     def __init__(self):
         self.rws = RamdonWalks(random.randint(2, 8))
         self.rw = RamdonWalk(**self.rws.creat_param_for_walk(N=500))
-        self.fdw = FaceDataSet()
+        self.fdw = FaceDataSet(start=100, end=110)
 
     def rw_test(self):
         '''
@@ -277,7 +305,7 @@ class BaseTest:
         '''
         '''
         for i in self.fdw:
-            print(i)
+            print('Open {} successfully!'.format(i))
         pass
 
 
