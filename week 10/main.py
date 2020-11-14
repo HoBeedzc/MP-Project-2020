@@ -1,5 +1,13 @@
+import re
+import os
 import random
+import numpy as np
+from PIL import Image
 import matplotlib.pyplot as plt
+
+
+class ImageNotExistError(FileNotFoundError):
+    pass
 
 
 class RamdonWalk:
@@ -76,14 +84,20 @@ class RamdonWalk:
     def show_info(self):
         '''
         '''
-        print('mu:{} x0:{} sigma2:{} N:{}'.format(self.mu, self.x0,
-                                                  self.sigma2, self.N))
-        pass
+        paramstr = 'mu:{} x0:{} sigma2:{} N:{}'.format(self.mu, self.x0,
+                                                       self.sigma2, self.N)
+        print(paramstr)
+        return paramstr
 
     def plot(self):
         '''
         '''
         walk = self.walk()
+        x = [i + 1 for i in range(self.N)]
+        y = [i for i in walk]
+        plt.plot(x, y)
+        plt.text(0, max(y), self.show_info())
+        plt.show()
 
 
 class RamdonWalks:
@@ -110,8 +124,8 @@ class RamdonWalks:
         '''
         '''
         param_dict = {}
-        param_dict['mu'] = random.uniform(1, 100)
-        param_dict['x0'] = random.randint(1, 10)
+        param_dict['mu'] = random.uniform(1, 10)
+        param_dict['x0'] = random.randint(1, 100)
         param_dict['sigma2'] = random.uniform(1, 100)
         param_dict['N'] = N
         return param_dict
@@ -120,47 +134,158 @@ class RamdonWalks:
         '''
         '''
         self._walk_list = []
-        N = random.randint(10, 100)
+        N = 500
         for i in range(self.num):
             param = RamdonWalks.creat_param_for_walk(N=N)
             print('walk{} params: '.format(i), end='')
             temp = RamdonWalk(**param)
             temp.show_info()
-            self._walk_list.append(temp)
+            self._walk_list.append(temp.walk())
         walk_zip = zip(*self._walk_list)
         return walk_zip
 
-
-def plot_random_walk(walk_zip, save_to=r'./img.png'):
-    '''
-    '''
-    x = [i + 1 for i in range(len(walk_zip))]
-    for i in range(len(walk_zip[0])):
-        y = [j[i] for j in walk_zip]
-        plt.plot(x, y)
-    plt.show()
+    def plots(self):
+        '''
+        '''
+        walk_zip = list(self.walks())
+        x = [i + 1 for i in range(len(walk_zip))]
+        for i in range(len(walk_zip[0])):
+            y = [j[i] for j in walk_zip]
+            plt.plot(x, y, label='walk {}'.format(i))
+        plt.legend()
+        plt.show()
 
 
 class FaceDataSet:
     '''
     '''
-    def __init__(self):
-        '''
-        '''
+    def _check_path(self):
+        flag = 1
+        for i in os.listdir(self.path):
+            try:
+                res = re.search(r'\.[A-Za-z0-9]+$', i).group(0)[1:]
+            except AttributeError:
+                res = ''
+            if res == 'jpg':
+                flag = 0
+        if flag:
+            raise ImageNotExistError(
+                'There no .jpg file in path {}. Path will reset!'.format(
+                    self.path))
+        else:
+            print('Find .jpg in path {} successfully!'.format(self.path))
         pass
+
+    def __init__(self,
+                 ipath=r'./dataset/FaceImages/Images/',
+                 start=0,
+                 end=5500):
+        '''
+        '''
+        self._path = ipath
+        self._check_path()
+        self._start = start
+        self._end = end
+        pass
+
+    @property
+    def path(self):
+        return self._path
+
+    @path.setter
+    def path(self, new_path):
+        self._path = new_path
+        self._check_path()
+        pass
+
+    @path.deleter
+    def path(self):
+        self._path = r'./'
+        pass
+
+    @property
+    def start(self):
+        return self._start
+
+    @start.setter
+    def start(self, new_start):
+        self._start = new_start
+
+    @start.deleter
+    def start(self):
+        self._start = 0
+
+    @property
+    def end(self):
+        return self._end
+
+    @end.setter
+    def end(self, new_end):
+        self._end = new_end
+
+    @end.deleter
+    def end(self):
+        self._end = 5500
+
+    def show_ndarray(self):
+        '''
+        '''
+        self.cntimg = Image.open(self.path + r'ftw{}.jpg'.format(self.cnt))
+        self.cntarray = np.array(self.cntimg)
+        return self.cntarray
 
     def __iter__(self):
         '''
         '''
-        pass
+        self.cnt = self.start
+        return self
 
     def __next__(self):
         '''
         '''
+        if self.cnt < self.end:
+            self.cnt += 1
+            return self.show_ndarray()
+        else:
+            raise StopIteration('全部加载完成！')
+
+
+class BaseTest:
+    '''
+    '''
+    def __init__(self):
+        self.rws = RamdonWalks(random.randint(2, 8))
+        self.rw = RamdonWalk(**self.rws.creat_param_for_walk(N=500))
+        self.fdw = FaceDataSet()
+
+    def rw_test(self):
+        '''
+        '''
+        print('Show random walk info...')
+        self.rw.show_info()
+        self.rw.walk()
+        self.rw.plot()
+        pass
+
+    def rws_test(self):
+        '''
+        '''
+        self.rws.plots()
+        pass
+
+    def fdw_test(self):
+        '''
+        '''
+        for i in self.fdw:
+            print(i)
         pass
 
 
 def main():
+    test = BaseTest()
+    test.rw_test()
+    test.rws_test()
+    test.fdw_test()
     pass
 
 
