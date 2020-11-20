@@ -295,7 +295,7 @@ class FaceDataSet:
     def __next__(self):
         if self.cnt < self.end:
             self.cnt += 1
-            return self.show_ndarray()
+            return self.show_ndarray(show=True)
         else:
             raise StopIteration('全部加载完成！')
 
