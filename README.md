@@ -1,45 +1,21 @@
 # MP_project
-all codes and slides in Modern Programming 2020
-
-Not including big homework
+This repository includes all codes and slides in the course "Modern Programming 2020", excluding term project.
 
 ## Contents
 
-- week 1 
-get start
-https://github.com/HoBeedzc/MP_project
+|Week No.|Topic & Homework|
+| ------- | ------- |
+| 1   |   Get Started (No Homework)|
+| 2   |   [Text Data Analysis](https://github.com/HoBeedzc/MP_project/tree/master/week%202)|
+| 3  |   [Emotion Analysis](https://github.com/HoBeedzc/MP_project/tree/master/week%203)|
+| 4|   Enjoy the National Day Holiday! (no homework)|
+| 5  |   [Network Analysis Package](https://github.com/HoBeedzc/MP_project/tree/master/week%205)|
+| 6  |   [`class`: Preliminary](https://github.com/HoBeedzc/MP_project/tree/master/week%206)|
+| 7  |   [`class`: Inheritance](https://github.com/HoBeedzc/MP_project/tree/master/week%207)|
+| 8  |   [Factory Model and Exception Handling](https://github.com/HoBeedzc/MP_project/tree/master/week%208)|
+| 9  |   [Proxy Model and Decorator](https://github.com/HoBeedzc/MP_project/tree/master/week%209)|
+| 10  |   TBA|
 
-- week 2 
-Text Data Analysis
-https://github.com/HoBeedzc/MP_project/tree/master/week%202
 
-- week 3 
-Emotional Analysis
-https://github.com/HoBeedzc/MP_project/tree/master/week%203
 
-- week 4 
-Enjoy the National Day Holiday!
-https://github.com/HoBeedzc/MP_project
-
-- week 5 
-Network Analysis Package
-https://github.com/HoBeedzc/MP_project/tree/master/week%205
-
-- week 6 
-Class Get Start
-https://github.com/HoBeedzc/MP_project/tree/master/week%206
-
-- week 7 
-Class Inheritance
-https://github.com/HoBeedzc/MP_project/tree/master/week%207
-
-- week 8 
-Factory Model and Exception Handling
-https://github.com/HoBeedzc/MP_project/tree/master/week%208
-
-- week 9 
-Proxy Model and Decorator
-https://github.com/HoBeedzc/MP_project/tree/master/week%209
-
-- week 10 
 
