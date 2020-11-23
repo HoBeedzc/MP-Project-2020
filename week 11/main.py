@@ -1,7 +1,7 @@
 import abc
 import matplotlib.pyplot as plt
 import imageio
-from numpy.lib.financial import rate
+from numpy.lib.function_base import append
 import pkuseg as ps
 from mpl_toolkits.mplot3d import Axes3D
 import wordcloud.wordcloud as wc
@@ -10,6 +10,9 @@ import os
 import librosa.display as ld
 import librosa
 import cv2
+from sklearn.decomposition import PCA
+import random
+from faker import Faker
 
 
 class ZeroDimError(ValueError):
@@ -21,6 +24,10 @@ class TextNotConvertError(ValueError):
 
 
 class ImagePathError(ValueError):
+    pass
+
+
+class PlotTypeUnrecognizeError(ValueError):
     pass
 
 
@@ -93,6 +100,9 @@ class ArrayPlotter:
         pass
 
     def _plot_pca(self, data, *args, **kwargs):
+        pca = PCA(n_components=2)
+        X_new = pca.transform(data)
+        plt.scatter(X_new[:, 0], X_new[:, 1], marker='o', *args, **kwargs)
         pass
 
     def plot(self, data, *args, **kwargs):
@@ -371,28 +381,87 @@ class PlotAdapter:
     def __init__(self):
         pass
 
-    def _plot_point(self, data, *args, **kwarg):
+    def _plot_point(self, data, *args, **kwargs):
+        PointPlotter().plot(data, *args, **kwargs)
         pass
 
-    def _plot_array(self, data, *args, **kwarg):
+    def _plot_array(self, data, *args, **kwargs):
+        ArrayPlotter().plot(data, *args, **kwargs)
         pass
 
-    def _plot_text(self, data, *args, **kwarg):
+    def _plot_text(self, data, *args, **kwargs):
+        TextPlotter().plot(data, *args, **kwargs)
         pass
 
-    def _plot_image(self, data, *args, **kwarg):
+    def _plot_image(self, data, *args, **kwargs):
+        ImagePlotter().plot(data, *args, **kwargs)
         pass
 
-    def _plot_gif(self, data, *args, **kwarg):
+    def _plot_gif(self, data, *args, **kwargs):
+        GifPlotter().plot(data, *args, **kwargs)
         pass
 
-    def _plot_mp3(self, data, *args, **kwarg):
+    def _plot_mp3(self, data, *args, **kwargs):
+        MP3Plotter().plot(data, *args, **kwargs)
         pass
 
-    def _plot_mp4(self, data, *args, **kwarg):
+    def _plot_mp4(self, data, *args, **kwargs):
+        MP4Plotter().plot(data, *args, **kwargs)
         pass
 
     def plot(self, data, *args, **kwargs):
+        if type(data) == str:
+            if os.path.isdir(data):
+                self._plot_image(data, *args, **kwargs)
+                self._plot_gif(data, *args, **kwargs)
+            elif os.path.isfile(data):
+                if os.path.splitext(data)[1] == '.mp3':
+                    self._plot_mp3(data, *args, **kwargs)
+                elif os.path.splitext(data)[1] == '.mp4':
+                    self._plot_mp4(data, *args, **kwargs)
+                elif os.path.splitext(data)[1] in [
+                        '.jpg', '.png', '.jpeg', '.svg', '.ico', '.gif'
+                ]:
+                    self._plot_image(data, *args, **kwargs)
+                    self._plot_gif(data, *args, **kwargs)
+                else:
+                    PlotTypeUnrecognizeError(
+                        'Cannot recognize the plot type by data str you input.'
+                    )
+            else:
+                self._plot_text(data, *args, **kwargs)
+            pass
+        elif type(data) == list:
+            if type(data[0]) == Point:
+                self._plot_point(data, *args, **kwargs)
+            elif type(data[0]) == list:
+                self._plot_array(data, *args, **kwargs)
+            elif type(data[0]) == str:
+                if os.path.isdir(data[0]) and len(data) == 1:
+                    self._plot_image(data, *args, **kwargs)
+                    self._plot_gif(data, *args, **kwargs)
+                elif os.path.isfile(data[0]):
+                    if os.path.splitext(data[0])[1] == '.mp3':
+                        self._plot_mp3(data[0], *args, **kwargs)
+                    elif os.path.splitext(data[0])[1] == '.mp4':
+                        self._plot_mp4(data[0], *args, **kwargs)
+                    elif os.path.splitext(data[0])[1] in [
+                            '.jpg', '.png', '.jpeg', '.svg', '.ico', '.gif'
+                    ]:
+                        self._plot_image(data, *args, **kwargs)
+                        self._plot_gif(data, *args, **kwargs)
+                    else:
+                        PlotTypeUnrecognizeError(
+                            'Cannot recognize the plot type by data str in list you input.'
+                        )
+                else:
+                    self._plot_text(data, *args, **kwargs)
+            else:
+                PlotTypeUnrecognizeError(
+                    'Cannot recognize the plot type by data list you input.')
+        else:
+            raise PlotTypeUnrecognizeError(
+                'Cannot recognize the plot type by data you input.')
         pass
 
 
@@ -402,11 +471,44 @@ class GetSomeData:
     def __init__(self):
         pass
 
+    def creat_Point(self, num=100):
+        '''
+        '''
+        res = []
+        for _ in range(num):
+            temp = Point(random.random(), random.random())
+            res.append(temp)
+        return res
+
+    def creat_Array(self, dim=2, num=100):
+        '''
+        '''
+        res = []
+        for _ in range(dim):
+            temp = []
+            for __ in range(num):
+                temp.append(random.random())
+            res.append(temp)
+        return res
+
+    def creat_Text(self, dim=1, num=1000):
+        '''
+        '''
+        f = Faker('zh-CN')
+        if dim == 1:
+            res = f.text(num)
+        else:
+            res = []
+            for _ in range(dim):
+                res.append(f.text(num))
+        return res
+
 
 class LetWeTest:
     '''
     '''
     def __init__(self):
+        self.plot_test = PlotAdapter()
         pass
 
 
