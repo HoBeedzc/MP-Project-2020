@@ -1,7 +1,6 @@
 import abc
 import matplotlib.pyplot as plt
 import imageio
-from numpy.lib.function_base import append
 import pkuseg as ps
 from mpl_toolkits.mplot3d import Axes3D
 import wordcloud.wordcloud as wc
@@ -471,7 +470,8 @@ class GetSomeData:
     def __init__(self):
         pass
 
-    def creat_Point(self, num=100):
+    @staticmethod
+    def creat_Point(num=100):
         '''
         '''
         res = []
@@ -480,7 +480,8 @@ class GetSomeData:
             res.append(temp)
         return res
 
-    def creat_Array(self, dim=2, num=100):
+    @staticmethod
+    def creat_Array(dim=2, num=100):
         '''
         '''
         res = []
@@ -491,7 +492,8 @@ class GetSomeData:
             res.append(temp)
         return res
 
-    def creat_Text(self, dim=1, num=1000):
+    @staticmethod
+    def creat_Text(dim=1, num=1000):
         '''
         '''
         f = Faker('zh-CN')
@@ -511,8 +513,25 @@ class LetWeTest:
         self.plot_test = PlotAdapter()
         pass
 
+    def point_test(self):
+        '''
+        '''
+        print('begin point plot test...')
+        self.plot_test.plot(GetSomeData.creat_Point())
+        plt.show()
+        pass
+
+    def array_test(self):
+        '''
+        '''
+        print('begin array plot test...')
+        self.plot_test.plot(GetSomeData.creat_Array())
+
 
 def main():
+    test = LetWeTest()
+    test.point_test()
+    test.array_test()
     pass
 
 
