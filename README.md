@@ -27,6 +27,6 @@ If you need to use it, you can contact the author or the copyright owner of the 
 | 8  |   [Factory Model and Exception Handling](https://github.com/HoBeedzc/MP_project/tree/master/week%208)|
 | 9  |   [Proxy Model and Decorator](https://github.com/HoBeedzc/MP_project/tree/master/week%209)|
 | 10 |   [Iterator and Generator](https://github.com/HoBeedzc/MP_project/tree/master/week%210)|
-| 11 |   [Adapter Model and Abstract Class](https://github.com/HoBeedzc/MP_project/tree/master/week%211)|
-| 12 |   [Multiprocessing Preliminary](https://github.com/HoBeedzc/MP_project/tree/master/week%212)|
+| 11 |   [Adapter Model and Abstract Class](https://github.com/HoBeedzc/MP_project/tree/master/week%2011)|
+| 12 |   [Multiprocessing Preliminary](https://github.com/HoBeedzc/MP_project/tree/master/week%2012)|
 
