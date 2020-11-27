@@ -41,7 +41,11 @@ class Plotter(metaclass=abc.ABCMeta):
 class Point:
     '''
     Point class
-    
+    class properties: None
+    instance properties: x, y
+    class methods: None
+    static methods: None
+    methods: None
     '''
     def __init__(self, x, y):
         self._x = x
@@ -69,11 +73,24 @@ class Point:
 @Plotter.register
 class PointPlotter:
     '''
+    class PointPlotter
+    class properties: None
+    instance properties: None
+    class methods: None
+    static methods: None
+    methods: plot
     '''
     def __init__(self):
         pass
 
     def plot(self, data, *args, **kwargs):
+        '''
+        数据可视化 可视化结果可使用plt.show()进行展示 使用plt.save()保存
+        :param data: 要可视化的数据
+        :param *args: 控制可视化的位置参数
+        :param **kwargs: 控制可视化的名称参数
+        :return: None
+        '''
         x = [i.x for i in data]
         y = [i.y for i in data]
         plt.scatter(x, y, *args, **kwargs)
@@ -83,6 +100,12 @@ class PointPlotter:
 @Plotter.register
 class ArrayPlotter:
     '''
+    class ArrayPlotter
+    class properties: None
+    instance properties: None
+    class methods: None
+    static methods: None
+    methods: plot
     '''
     def __init__(self):
         pass
@@ -110,6 +133,13 @@ class ArrayPlotter:
         pass
 
     def plot(self, data, *args, **kwargs):
+        '''
+        数据可视化 可视化结果可使用plt.show()进行展示 使用plt.save()保存
+        :param data: 要可视化的数据
+        :param *args: 控制可视化的位置参数
+        :param **kwargs: 控制可视化的名称参数
+        :return: None
+        '''
         length = len(data)
         if length == 0:
             raise ZeroDimError('Can not plot data with dim zero.')
@@ -128,6 +158,12 @@ class ArrayPlotter:
 @Plotter.register
 class TextPlotter:
     '''
+    class TextPlotter
+    class properties: None
+    instance properties: None
+    class methods: None
+    static methods: None
+    methods: plot
     '''
     def __init__(self):
         pass
@@ -178,6 +214,13 @@ class TextPlotter:
         pass
 
     def plot(self, data, *args, **kwargs):
+        '''
+        数据可视化 可视化结果可使用plt.show()进行展示 使用plt.save()保存
+        :param data: 要可视化的数据
+        :param *args: 控制可视化的位置参数
+        :param **kwargs: 控制可视化的名称参数
+        :return: None
+        '''
         if type(data) == str:
             if os.path.splitext(data)[1] == '.txt':
                 self._text = self._read_from_file(data)
@@ -197,6 +240,12 @@ class TextPlotter:
 @Plotter.register
 class ImagePlotter:
     '''
+    class ImagePlotter
+    class properties: None
+    instance properties: None
+    class methods: None
+    static methods: None
+    methods: plot
     '''
     def __init__(self):
         pass
@@ -263,6 +312,13 @@ class ImagePlotter:
         pass
 
     def plot(self, data, *args, **kwargs):
+        '''
+        数据可视化 可视化结果可使用plt.show()进行展示 使用plt.save()保存
+        :param data: 要可视化的数据
+        :param *args: 控制可视化的位置参数
+        :param **kwargs: 控制可视化的名称参数
+        :return: None
+        '''
         typedata = type(data)
         lendata = len(data)
         if typedata == str:
@@ -289,6 +345,12 @@ class ImagePlotter:
 @Plotter.register
 class GifPlotter:
     '''
+    class GifPlotter
+    class properties: None
+    instance properties: None
+    class methods: None
+    static methods: None
+    methods: plot
     '''
     def __init__(self):
         pass
@@ -314,6 +376,13 @@ class GifPlotter:
         pass
 
     def plot(self, data, *args, **kwargs):
+        '''
+        数据可视化 可视化结果可使用plt.show()进行展示 使用plt.save()保存
+        :param data: 要可视化的数据
+        :param *args: 控制可视化的位置参数
+        :param **kwargs: 控制可视化的名称参数
+        :return: None
+        '''
         typedata = type(data)
         lendata = len(data)
         if typedata == str:
@@ -338,11 +407,24 @@ class GifPlotter:
 @Plotter.register
 class MP3Plotter:
     '''
+    class MP3Plotter
+    class properties: None
+    instance properties: None
+    class methods: None
+    static methods: None
+    methods: plot
     '''
     def __init__(self):
         pass
 
     def plot(self, data, *args, **kwargs):
+        '''
+        数据可视化 可视化结果可使用plt.show()进行展示 使用plt.save()保存
+        :param data: 要可视化的数据
+        :param *args: 控制可视化的位置参数
+        :param **kwargs: 控制可视化的名称参数
+        :return: None
+        '''
         music, sr = librosa.load(data)
         plt.figure(figsize=(14, 5))
         ld.waveplot(music, sr=sr)
@@ -353,6 +435,12 @@ class MP3Plotter:
 @Plotter.register
 class MP4Plotter:
     '''
+    class MP4Plotter
+    class properties: None
+    instance properties: None
+    class methods: None
+    static methods: None
+    methods: plot
     '''
     def __init__(self):
         pass
@@ -373,6 +461,13 @@ class MP4Plotter:
         pass
 
     def plot(self, data, *args, **kwargs):
+        '''
+        数据可视化 可视化结果可使用plt.show()进行展示 使用plt.save()保存
+        :param data: 要可视化的数据
+        :param *args: 控制可视化的位置参数
+        :param **kwargs: 控制可视化的名称参数
+        :return: None
+        '''
         vidcap = cv2.VideoCapture(data)
         frate = kwargs.get('rate', 30)
         success, image = vidcap.read()
@@ -394,6 +489,12 @@ class MP4Plotter:
 
 class PlotAdapter:
     '''
+    class PlotAdapter
+    class properties: None
+    instance properties: None
+    class methods: None
+    static methods: None
+    methods: plot
     '''
     def __init__(self):
         pass
@@ -427,6 +528,13 @@ class PlotAdapter:
         pass
 
     def plot(self, data, *args, **kwargs):
+        '''
+        数据可视化 可视化结果可使用plt.show()进行展示 使用plt.save()保存
+        :param data: 要可视化的数据
+        :param *args: 控制可视化的位置参数
+        :param **kwargs: 控制可视化的名称参数
+        :return: None
+        '''
         if type(data) == str:
             if os.path.isdir(data):
                 self._plot_image(data, *args, **kwargs)
@@ -486,6 +594,12 @@ class PlotAdapter:
 
 class GetSomeData:
     '''
+    class GetSomeData
+    class properties: None
+    instance properties: None
+    class methods: None
+    static methods: creat_Point, creat_Array, creat_Text,
+    methods: None
     '''
     def __init__(self):
         pass
@@ -539,6 +653,12 @@ class GetSomeData:
 
 class LetWeTest:
     '''
+    class LetWeTest
+    class properties: None
+    instance properties: plot_test
+    class methods: None
+    static methods: None
+    methods: point_test, array_test, text_test, gif_and_image_test, mp3_test, mp4_test
     '''
     def __init__(self):
         self.plot_test = PlotAdapter()
