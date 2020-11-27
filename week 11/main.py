@@ -40,6 +40,8 @@ class Plotter(metaclass=abc.ABCMeta):
 
 class Point:
     '''
+    Point class
+    
     '''
     def __init__(self, x, y):
         self._x = x
@@ -489,8 +491,11 @@ class GetSomeData:
         pass
 
     @staticmethod
-    def creat_Point(num=100):
+    def creat_Point(num=100) -> list:
         '''
+        创建数据点
+        :param num: 点数据的个数
+        :return: 一个列表，包含创建的点数据
         '''
         res = []
         for _ in range(num):
@@ -499,8 +504,12 @@ class GetSomeData:
         return res
 
     @staticmethod
-    def creat_Array(dim=2, num=100):
+    def creat_Array(dim=2, num=100) -> list:
         '''
+        创建数组
+        :param dim: 数组的维度 default 2
+        :param num: 每个维度包含的数据个数 default 100
+        :reutrn: 一个列表，包含创建的数组数据
         '''
         res = []
         for _ in range(dim):
@@ -513,6 +522,10 @@ class GetSomeData:
     @staticmethod
     def creat_Text(dim=1, num=1000):
         '''
+        创建中文字符串
+        :param dim: 要创建的字符串段数 default 1
+        :param num: 每段字符串包含的字符数 default 1000
+        :return: 一个列表，包含创建的字符串
         '''
         f = Faker('zh-CN')
         if dim == 1:
@@ -533,6 +546,8 @@ class LetWeTest:
 
     def point_test(self):
         '''
+        点画图测试
+        :return: None
         '''
         print('begin point plot test...')
         self.plot_test.plot(GetSomeData.creat_Point())
@@ -542,6 +557,8 @@ class LetWeTest:
 
     def array_test(self):
         '''
+        数组画图测试
+        :return: None
         '''
         print('begin array plot test...')
         print('dim = 1')
@@ -561,6 +578,8 @@ class LetWeTest:
 
     def text_test(self):
         '''
+        文字画图测试
+        :return: None
         '''
         print('begin text plot test...')
         print('dim = 1')
@@ -577,6 +596,8 @@ class LetWeTest:
 
     def gif_and_image_test(self):
         '''
+        图片画图测试
+        :return: None
         '''
         print('begin gif and image test...')
         self.plot_test.plot(r'./img/')
@@ -585,6 +606,8 @@ class LetWeTest:
 
     def mp3_test(self):
         '''
+        mp3测试
+        :return: None
         '''
         print('begin mp3 test...')
         self.plot_test.plot(r'./mp3/hzwz.mp3')
@@ -593,6 +616,8 @@ class LetWeTest:
 
     def mp4_test(self):
         '''
+        mp4测试
+        :return: None
         '''
         print('begin mp4 test...')
         self.plot_test.plot(r'./mp4/sjw.mp4')
@@ -602,13 +627,12 @@ class LetWeTest:
 
 def main():
     test = LetWeTest()
-    # test.point_test()
-    # test.array_test()
-    # test.text_test()
-    # test.gif_and_image_test()
-    # test.mp3_test()
+    test.point_test()
+    test.array_test()
+    test.text_test()
+    test.gif_and_image_test()
+    test.mp3_test()
     test.mp4_test()
-
     pass
 
 
