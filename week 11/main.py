@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import imageio
 import pkuseg as ps
 from mpl_toolkits.mplot3d import Axes3D
-import wordcloud.wordcloud as wc
+from wordcloud import WordCloud as wc
 from PIL import Image
 import os
 import librosa.display as ld
@@ -12,6 +12,8 @@ import cv2
 from sklearn.decomposition import PCA
 import random
 from faker import Faker
+from tqdm import tqdm
+import re
 
 
 class ZeroDimError(ValueError):
@@ -86,7 +88,7 @@ class ArrayPlotter:
     def _plot2d(self, data, *args, **kwargs):
         x = data[0]
         y = data[1]
-        plt.plot(x, y, *args, **kwargs)
+        plt.scatter(x, y, *args, **kwargs)
         pass
 
     def _plot3d(self, data, *args, **kwargs):
@@ -95,11 +97,12 @@ class ArrayPlotter:
         z = data[2]
         plt.figure()
         ax1 = plt.axes(projection='3d')
-        ax1.plot(x, y, z)
+        ax1.scatter(x, y, z)
         pass
 
     def _plot_pca(self, data, *args, **kwargs):
         pca = PCA(n_components=2)
+        pca.fit(data)
         X_new = pca.transform(data)
         plt.scatter(X_new[:, 0], X_new[:, 1], marker='o', *args, **kwargs)
         pass
@@ -110,13 +113,13 @@ class ArrayPlotter:
             raise ZeroDimError('Can not plot data with dim zero.')
         elif length == 1:
             x = [i + 1 for i in range(len(data[0]))]
-            self._plot2d(self, [x, data[0]], *args, **kwargs)
+            self._plot2d([x, data[0]], *args, **kwargs)
         elif length == 2:
-            self._plot2d(self, data, *args, **kwargs)
+            self._plot2d(data, *args, **kwargs)
         elif length == 3:
-            self._plot3d(self, data, *args, **kwargs)
+            self._plot3d(data, *args, **kwargs)
         else:
-            self._plot_pca(self, data, *args, **kwargs)
+            self._plot_pca(data, *args, **kwargs)
         pass
 
 
@@ -137,6 +140,15 @@ class TextPlotter:
                 continue
         return ans
 
+    @staticmethod
+    def _read_from_file(data):
+        try:
+            with open(data, 'r') as f:
+                return f.read()
+        except UnicodeDecodeError:
+            with open(data, 'r', encoding='utf-8') as f:
+                return f.read()
+
     def _cut(self):
         seg = ps.pkuseg()
         self._cut_text = seg.cut(self._text)
@@ -146,7 +158,7 @@ class TextPlotter:
         with open(r'.\data\stopwords_list.txt', 'r') as f:
             sl = f.read().strip().split('\n')
         self._key_words = []
-        for i in self._cut_text:
+        for i in tqdm(self._cut_text):
             if i not in sl:
                 self._key_words.append(i)
         pass
@@ -157,7 +169,7 @@ class TextPlotter:
             background_color="white",  # 背景颜色
             max_words=1000,  # 词云显示的最大词数
             random_state=42,  # 随机数
-            collocations=False,  # 避免重复单词
+            collocations=False  # 避免重复单词
         ).generate(" ".join(self._key_words))
         plt.imshow(self.wc_, interpolation='bilinear')
         plt.axis("off")  # 隐藏坐标
@@ -165,7 +177,10 @@ class TextPlotter:
 
     def plot(self, data, *args, **kwargs):
         if type(data) == str:
-            self._text = data
+            if os.path.splitext(data)[1] == '.txt':
+                self._text = self._read_from_file(data)
+            else:
+                self._text = data
         elif type(data) == list:
             self._text = self._merge_text(data)
         else:
@@ -207,21 +222,29 @@ class ImagePlotter:
     def _plot_multiple(self, data: list, *args, **kwargs):
         length = kwargs.get('len', 2)
         width = kwargs.get('wid', 2)
-        for i in range(int(len(data) / (length * width)) + 1):
+        for i in range(int(len(data) / (length * width))):
             plt.figure()
-            plt.axis('off')
             for j in range(length * width):
                 plt.subplot(length, width, j + 1)
-                if i * (length * width) + j + 1 > len(data):
-                    break
-                img = Image.open(data[i * (length * width) + j + 1])
+                img = Image.open(data[i * (length * width) + j])
                 plt.imshow(img)
+                plt.axis('off')
             plt.show()
+        leftnum = len(data) - (i + 1) * (length * width)
+        if leftnum == 0:
+            pass
+        elif leftnum == 1:
+            self._plot_single(data[-1])
+        elif leftnum == 2:
+            self._plot_double(data[-2:])
+        elif leftnum == 3:
+            self._plot_double(data[-3:-1])
+            self._plot_single(data[-1])
         pass
 
     def _plot_folder(self, data: str, *args, **kwargs):
         img_path_list = []
-        img_type_list = ['.jpg', '.png', '.jpeg', '.svg', '.ico', '.gif']
+        img_type_list = ['.jpg', '.png', '.jpeg', '.svg', '.ico']
         for root, dirs, files in os.walk(data):
             for file in files:
                 if os.path.splitext(file)[1] in img_type_list:
@@ -269,22 +292,18 @@ class GifPlotter:
         pass
 
     def _plot_imglist(self, data: list, *args, **kwargs):
-        gif_name = kwargs.get('gif_name', r'img/gif.gif')
-        duration = kwargs.get('duration', 0.35)
+        gif_name = kwargs.get('gif_name', r'./img/gif.gif')
+        duration = kwargs.get('duration', 0.2)
         frames = []
         for image_name in data:
             frames.append(imageio.imread(image_name))
         imageio.mimsave(gif_name, frames, 'GIF', duration=duration)
-        img = Image.open(gif_name)
-        plt.figure()
-        plt.axis('off')
-        plt.imshow(img)
-        plt.show()
+        os.system(r'start ' + gif_name)
         pass
 
     def _plot_folder(self, data: str, *args, **kwargs):
         img_path_list = []
-        img_type_list = ['.jpg', '.png', '.jpeg', '.svg', '.ico', '.gif']
+        img_type_list = ['.jpg', '.png', '.jpeg', '.svg', '.ico']
         for root, dirs, files in os.walk(data):
             for file in files:
                 if os.path.splitext(file)[1] in img_type_list:
@@ -336,22 +355,19 @@ class MP4Plotter:
     def __init__(self):
         pass
 
-    def _merge_to_gif(self, *args, **kwargs):
+    def _merge_to_gif(self, data, *args, **kwargs):
         img_path_list = []
         for root, dirs, files in os.walk(r".\MP4data"):
             for file in files:
                 img_path_list.append(os.path.join(root, file))
-        gif_name = kwargs.get('gif_name', r'img/video2gif.gif')
-        duration = kwargs.get('duration', 0.35)
+        file_name = re.search(r'/[A-Za-z0-9]*\.mp4', data).group(0)[1:-4]
+        gif_name = kwargs.get('gif_name', r'img/' + file_name + r'v2g.gif')
+        duration = kwargs.get('duration', 0.2)
         frames = []
         for image_name in img_path_list:
             frames.append(imageio.imread(image_name))
         imageio.mimsave(gif_name, frames, 'GIF', duration=duration)
-        img = Image.open(gif_name)
-        plt.figure()
-        plt.axis('off')
-        plt.imshow(img)
-        plt.show()
+        os.system(r'start ' + gif_name)
         pass
 
     def plot(self, data, *args, **kwargs):
@@ -370,7 +386,7 @@ class MP4Plotter:
                 count += 1
             except cv2.error:
                 break
-        self._merge_to_gif(*args, **kwargs)
+        self._merge_to_gif(data, *args, **kwargs)
         pass
 
 
@@ -416,6 +432,8 @@ class PlotAdapter:
             elif os.path.isfile(data):
                 if os.path.splitext(data)[1] == '.mp3':
                     self._plot_mp3(data, *args, **kwargs)
+                elif os.path.splitext(data)[1] == '.txt':
+                    self._plot_text(data, *args, **kwargs)
                 elif os.path.splitext(data)[1] == '.mp4':
                     self._plot_mp4(data, *args, **kwargs)
                 elif os.path.splitext(data)[1] in [
@@ -519,19 +537,78 @@ class LetWeTest:
         print('begin point plot test...')
         self.plot_test.plot(GetSomeData.creat_Point())
         plt.show()
+        print()
         pass
 
     def array_test(self):
         '''
         '''
         print('begin array plot test...')
+        print('dim = 1')
+        self.plot_test.plot(GetSomeData.creat_Array(dim=1))
+        plt.show()
+        print('dim = 2')
         self.plot_test.plot(GetSomeData.creat_Array())
+        plt.show()
+        print('dim = 3')
+        self.plot_test.plot(GetSomeData.creat_Array(dim=3))
+        plt.show()
+        print('dim = 4')
+        self.plot_test.plot(GetSomeData.creat_Array(dim=4))
+        plt.show()
+        print()
+        pass
+
+    def text_test(self):
+        '''
+        '''
+        print('begin text plot test...')
+        print('dim = 1')
+        self.plot_test.plot(GetSomeData.creat_Text())
+        plt.show()
+        print('dim = 2')
+        self.plot_test.plot(GetSomeData.creat_Text(dim=2))
+        plt.show()
+        print('read from file')
+        self.plot_test.plot(r'./txt/sdfqbsz.txt')
+        plt.show()
+        print()
+        pass
+
+    def gif_and_image_test(self):
+        '''
+        '''
+        print('begin gif and image test...')
+        self.plot_test.plot(r'./img/')
+        print()
+        pass
+
+    def mp3_test(self):
+        '''
+        '''
+        print('begin mp3 test...')
+        self.plot_test.plot(r'./mp3/hzwz.mp3')
+        print()
+        pass
+
+    def mp4_test(self):
+        '''
+        '''
+        print('begin mp4 test...')
+        self.plot_test.plot(r'./mp4/sjw.mp4')
+        print()
+        pass
 
 
 def main():
     test = LetWeTest()
-    test.point_test()
-    test.array_test()
+    # test.point_test()
+    # test.array_test()
+    # test.text_test()
+    # test.gif_and_image_test()
+    # test.mp3_test()
+    test.mp4_test()
+
     pass
 
 
