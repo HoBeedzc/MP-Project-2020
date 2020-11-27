@@ -2,7 +2,16 @@
 This repository includes all codes and slides in the course "Modern Programming 2020", excluding term project.
 
 ## Notice
-Sorry, due to copyright reasons, since November 27, 2020, this warehouse will no longer provide data sets used in the code. If you need to use it, you can contact the author or the copyright owner of the dataset.
+Sorry, due to copyright reasons, since November 27, 2020, this warehouse will no longer provide data sets used in the code. 
+
+Affected File :
+- No copyright dataset files
+- Temporary files generated during code running
+- result file from no copyright dataset files
+
+If you need to use it, you can contact the author or the copyright owner of the dataset.
+
+**The source code is not affected**
 
 ## Contents
 
