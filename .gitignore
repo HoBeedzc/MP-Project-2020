@@ -129,11 +129,5 @@ dmypy.json
 .pyre/
 
 # 自带文件
-.zip
-.pdf
 .hobee
-作业提交文件/
-.vscode
-FaceImages/
 Under_Protection/
-week 11/
