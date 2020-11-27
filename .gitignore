@@ -131,3 +131,5 @@ dmypy.json
 # 自带文件
 .hobee
 Under_Protection/
+THUCN/
+.vscode
