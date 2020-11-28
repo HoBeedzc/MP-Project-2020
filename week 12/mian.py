@@ -1,6 +1,4 @@
-from multiprocessing import Process
-from multiprocessing import Pipe
-from multiprocessing import Queue
+from multiprocessing import Process, Pipe, Queue
 import time
 import pkuseg as ps
 from functools import wraps
@@ -18,7 +16,6 @@ class Map(Process):
         Map.ID += 1
         self.fq = fq
         self.rq = rq
-        self.seg = ps.pkuseg()
 
     @property
     def name(self):
@@ -29,10 +26,11 @@ class Map(Process):
         '''
         data = self.fq.get()
         if data is None:
-            print('{} will close.'.format(self.name))
+            self.write_log('{} will close.'.format(self.name))
             return None
         else:
-            print('{} gets {} from file Queue.'.format(self.name, data))
+            self.write_log('{} gets {} from file Queue.'.format(
+                self.name, data))
             return data
 
     def read_news(self, news) -> dict:
@@ -50,20 +48,30 @@ class Map(Process):
         '''
         '''
         self.rq.put(res)
-        print('{} puts {} result into result Queue.'.format(self.name, news))
+        self.write_log('{} puts {} result into result Queue.'.format(
+            self.name, news))
         pass
 
     def run(self):
+        self.logfile = open(r'./week 12/log/{}.txt'.format(self.name), 'w')
+        self.seg = ps.pkuseg()
         while True:
             data = self.get_news()
             if data is None:
                 self.rq.put(None)
-                print('{} puts None into result Queue.'.format(self.name))
+                self.write_log('{} puts None into result Queue.'.format(
+                    self.name))
                 break
             else:
                 res = self.read_news(data)
                 self.send_res(res, data)
+        self.logfile.close()
         pass
+
+    def write_log(self, info):
+        self.logfile.write(str(time.time()) + '\t')
+        self.logfile.write(info)
+        self.logfile.write('\n')
 
 
 class Reduce(Process):
@@ -89,12 +97,12 @@ class Reduce(Process):
         if data is None:
             self.none_cnt += 1
             if self.none_cnt == self.map_num:
-                print('All process has ended')
+                self.write_log('All process has ended')
                 return None
-            print('{} processes have ended'.format(self.none_cnt))
+            self.write_log('{} processes have ended'.format(self.none_cnt))
             return 0
         else:
-            print('{} get a res though Queue'.format(self.name))
+            self.write_log('{} get a res though Queue'.format(self.name))
             return data
 
     def merge_result(self, data: dict) -> None:
@@ -106,10 +114,11 @@ class Reduce(Process):
         '''
         '''
         self.sp.send(self.res_dict)
-        print('{} puts summary result though Pipe.'.format(self.name))
+        self.write_log('{} puts summary result though Pipe.'.format(self.name))
         pass
 
     def run(self):
+        self.logfile = open(r'./week 12/log/{}.txt'.format(self.name), 'w')
         while True:
             data = self.receive_result()
             if data is None:
@@ -119,7 +128,13 @@ class Reduce(Process):
             else:
                 self.merge_result(data)
         self.send_summary()
+        self.logfile.close()
         pass
+
+    def write_log(self, info):
+        self.logfile.write(str(time.time()) + '\t')
+        self.logfile.write(info)
+        self.logfile.write('\n')
 
 
 class Distribute(Process):
@@ -139,7 +154,7 @@ class Distribute(Process):
         '''
         '''
         for _ in range(self.map_num):
-            print('{} puts None into file Queue.'.format(self.name))
+            self.write_log('{} puts None into file Queue.'.format(self.name))
             self.fq.put(None)
 
     def put_file(self, path=r'./week 12/THUCN/test/'):
@@ -147,14 +162,22 @@ class Distribute(Process):
         '''
         for file in os.listdir(path):
             file_path = os.path.join(path, file)
-            print('{} puts {} into file Queue.'.format(self.name, file_path))
+            self.write_log('{} puts {} into file Queue.'.format(
+                self.name, file_path))
             self.fq.put(file_path)
 
     def run(self):
+        self.logfile = open(r'./week 12/log/{}.txt'.format(self.name), 'w')
         self.put_file()
         self.put_none()
-        print('All file has been puts.')
+        self.write_log('All file has been puts.')
+        self.logfile.close()
         pass
+
+    def write_log(self, info):
+        self.logfile.write(str(time.time()) + '\t')
+        self.logfile.write(info)
+        self.logfile.write('\n')
 
 
 class Master:
@@ -172,6 +195,7 @@ class Master:
         '''
         for _ in range(self.map_num):
             temp = Map(fq, rq)
+            temp.start()
             self.map.append(temp)
         pass
 
@@ -179,6 +203,7 @@ class Master:
         '''
         '''
         temp = Reduce('Reduce Zero', rq, sp, self.map_num)
+        temp.start()
         self.reduce = temp
         pass
 
@@ -186,22 +211,8 @@ class Master:
         '''
         '''
         temp = Distribute('Distribute Zero', fq, self.map_num)
+        temp.start()
         self.distribute = temp
-        pass
-
-    def start_distribute_process(self):
-        '''
-        '''
-        self.distribute.start()
-        pass
-
-    def start_map_process(self):
-        for i in self.map:
-            i.start()
-        pass
-
-    def start_reduce_process(self):
-        self.reduce.start()
         pass
 
     def join_distribute_process(self):
@@ -215,36 +226,35 @@ class Master:
             i.join()
         pass
 
-    def join_reduce_process(self):
-        self.reduce.join()
-        pass
-
     def receive_summary(self, sp):
         '''
         '''
         res = None
         while True:
             res = sp[0].recv()
-            print('Master receive summary result for pipe')
+            self.write_log('Master receive summary result for pipe')
             return res
 
     def main(self):
+        self.logfile = open(r'./week 12/log/Master.txt', 'w')
         file_queue = Queue()
         result_queue = Queue()
         summary_pipe = Pipe()
+        self.create_distribute_process(file_queue)
         self.create_map_process(file_queue, result_queue)
         self.create_reduce_process(result_queue, summary_pipe)
-        self.create_distribute_process(file_queue)
-        self.start_distribute_process()
-        self.start_map_process()
-        self.start_reduce_process()
         self.join_distribute_process()
         self.join_map_process()
-        # self.join_reduce_process()
-        print(self.receive_summary(summary_pipe))
+        self.receive_summary(summary_pipe)
         summary_pipe[0].close()
         summary_pipe[1].close()
+        self.logfile.close()
         pass
+
+    def write_log(self, info):
+        self.logfile.write(str(time.time()) + '\t')
+        self.logfile.write(info)
+        self.logfile.write('\n')
 
 
 def show_running_time(func):
@@ -261,10 +271,15 @@ def show_running_time(func):
 
 
 @show_running_time
-def main():
-    t = Master(1)
+def test(num):
+    t = Master(num)
     t.main()
     pass
+
+
+def main():
+    for i in range(1, 11):
+        test(i)
 
 
 if __name__ == '__main__':
