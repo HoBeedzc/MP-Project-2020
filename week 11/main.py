@@ -14,6 +14,7 @@ import random
 from faker import Faker
 from tqdm import tqdm
 import re
+plt.style.use('ggplot')
 
 
 class ZeroDimError(ValueError):
@@ -94,6 +95,9 @@ class PointPlotter:
         x = [i.x for i in data]
         y = [i.y for i in data]
         plt.scatter(x, y, *args, **kwargs)
+        plt.title('PointPlot')
+        plt.xlabel('X')
+        plt.ylabel('Y')
         pass
 
 
@@ -114,6 +118,9 @@ class ArrayPlotter:
         x = data[0]
         y = data[1]
         plt.scatter(x, y, *args, **kwargs)
+        plt.title('ArrayPlot with dim 2')
+        plt.xlabel('X')
+        plt.ylabel('Y')
         pass
 
     def _plot3d(self, data, *args, **kwargs):
@@ -123,6 +130,9 @@ class ArrayPlotter:
         plt.figure()
         ax1 = plt.axes(projection='3d')
         ax1.scatter(x, y, z)
+        plt.title('ArrayPlot with dim 3')
+        plt.xlabel('X')
+        plt.ylabel('Y')
         pass
 
     def _plot_pca(self, data, *args, **kwargs):
@@ -130,6 +140,9 @@ class ArrayPlotter:
         pca.fit(data)
         X_new = pca.transform(data)
         plt.scatter(X_new[:, 0], X_new[:, 1], marker='o', *args, **kwargs)
+        plt.title('ArrayPlot with dim {}, pac to 2'.format(len(data)))
+        plt.xlabel('X')
+        plt.ylabel('Y')
         pass
 
     def plot(self, data, *args, **kwargs):
