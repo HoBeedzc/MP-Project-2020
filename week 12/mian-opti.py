@@ -3,7 +3,6 @@ import time
 import pkuseg as ps
 from functools import wraps
 import os
-import sys
 
 
 class Map(Process):
@@ -11,12 +10,13 @@ class Map(Process):
     '''
     ID = 0
 
-    def __init__(self, fq, rq):
+    def __init__(self, fq, rq, mr_num):
         super().__init__()
         self._name = 'Map {}'.format(Map.ID)
         Map.ID += 1
         self.fq = fq
         self.rq = rq
+        self.mr_num = mr_num
 
     @property
     def name(self):
@@ -39,9 +39,9 @@ class Map(Process):
         '''
         with open(news, 'r', encoding='utf-8') as f:
             lines = f.read()
-            fut = self.seg.cut(lines)
+            fcut = self.seg.cut(lines)
         res_dict = {}
-        for i in fut:
+        for i in fcut:
             res_dict[i] = res_dict.get(i, 0) + 1
         return res_dict
 
@@ -59,9 +59,10 @@ class Map(Process):
         while True:
             data = self.get_news()
             if data is None:
-                self.rq.put(None)
-                self.write_log('{} puts None into result Queue.'.format(
-                    self.name))
+                for _ in range(self.mr_num):
+                    self.rq.put(None)
+                    self.write_log('{} puts None into result Queue.'.format(
+                        self.name))
                 break
             else:
                 res = self.read_news(data)
@@ -75,21 +76,17 @@ class Map(Process):
         self.logfile.write('\n')
 
 
-class Reduce(Process):
+class MidReduce(Process):
     '''
     '''
-    def __init__(self, name, rq, sp: Pipe, map_num):
+    def __init__(self, name, rq, rq2, map_num):
         super().__init__()
-        self._name = name
+        self.name = name
         self.rq = rq
-        self.sp = sp[1]
+        self.rq2 = rq2
         self.res_dict = {}
         self.none_cnt = 0
         self.map_num = map_num
-
-    @property
-    def name(self):
-        return self._name
 
     def receive_result(self):
         '''
@@ -104,6 +101,72 @@ class Reduce(Process):
             return 0
         else:
             self.write_log('{} get a res though Queue'.format(self.name))
+            return data
+
+    def merge_result(self, data: dict) -> None:
+        for key, value in data.items():
+            self.res_dict[key] = self.res_dict.get(key, 0) + value
+        pass
+
+    def send_result(self):
+        '''
+        '''
+        self.rq2.put(self.res_dict)
+        self.write_log('{} puts mid result though res Queue-2.'.format(
+            self.name))
+        pass
+
+    def run(self):
+        self.logfile = open(r'./week 12/log/{}.txt'.format(self.name), 'w')
+        while True:
+            data = self.receive_result()
+            if data is None:
+                break
+            elif data == 0:
+                continue
+            else:
+                self.merge_result(data)
+        self.send_result()
+        self.rq2.put(None)
+        self.write_log('{} puts None though res Queue-2.'.format(self.name))
+        self.logfile.close()
+        pass
+
+    def write_log(self, info):
+        self.logfile.write(str(time.time()) + '\t')
+        self.logfile.write(info)
+        self.logfile.write('\n')
+
+
+class Reduce(Process):
+    '''
+    '''
+    def __init__(self, name, rq, sp: Pipe, mr_num):
+        super().__init__()
+        self._name = name
+        self.rq = rq
+        self.sp = sp[1]
+        self.res_dict = {}
+        self.none_cnt = 0
+        self.mr_num = mr_num
+
+    @property
+    def name(self):
+        return self._name
+
+    def receive_result(self):
+        '''
+        '''
+        data = self.rq.get()
+        if data is None:
+            self.none_cnt += 1
+            if self.none_cnt == self.mr_num:
+                self.write_log('All process has ended')
+                return None
+            self.write_log('{} processes have ended'.format(self.none_cnt))
+            return 0
+        else:
+            self.write_log('{} get a res though Queue - 2'.format(self.name))
             return data
 
     def merge_result(self, data: dict) -> None:
@@ -184,9 +247,11 @@ class Distribute(Process):
 class Master:
     '''
     '''
-    def __init__(self, map_num):
+    def __init__(self, map_num, mr_num):
         self.map_num = map_num
+        self.mr_num = mr_num
         self.map = []
+        self.mr = []
         self.distribute = None
         self.reduce = None
         pass
@@ -195,15 +260,24 @@ class Master:
         '''
         '''
         for _ in range(self.map_num):
-            temp = Map(fq, rq)
+            temp = Map(fq, rq, self.mr_num)
             temp.start()
             self.map.append(temp)
+        pass
+
+    def create_mr_process(self, rq, rq2):
+        '''
+        '''
+        for i in range(self.mr_num):
+            temp = MidReduce('Mid Reduce {}'.format(i), rq, rq2, self.map_num)
+            temp.start()
+            self.mr.append(temp)
         pass
 
     def create_reduce_process(self, rq, sp):
         '''
         '''
-        temp = Reduce('Reduce Zero', rq, sp, self.map_num)
+        temp = Reduce('Reduce Zero', rq, sp, self.mr_num)
         temp.start()
         self.reduce = temp
         pass
@@ -240,10 +314,12 @@ class Master:
         self.logfile = open(r'./week 12/log/Master.txt', 'w')
         file_queue = Queue()
         result_queue = Queue()
+        result_queue_2 = Queue()
         summary_pipe = Pipe()
         self.create_distribute_process(file_queue)
         self.create_map_process(file_queue, result_queue)
-        self.create_reduce_process(result_queue, summary_pipe)
+        self.create_mr_process(result_queue, result_queue_2)
+        self.create_reduce_process(result_queue_2, summary_pipe)
         self.join_distribute_process()
         self.join_map_process()
         self.receive_summary(summary_pipe)
@@ -272,23 +348,16 @@ def show_running_time(func):
 
 
 @show_running_time
-def test(num):
-    t = Master(num)
+def test(n1, n2):
+    t = Master(n1, n2)
     t.main()
     pass
 
 
-def run_from_shell():
-    test(int(sys.argv[1]))
-    pass
-
-
 def main():
-    for i in range(1, 11):
-        test(i)
+    test(5, 3)
 
 
 if __name__ == '__main__':
-    # main()
-    run_from_shell()
+    main()
     pass
