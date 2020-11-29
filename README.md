@@ -2,7 +2,7 @@
 This repository includes all codes and slides in the course "Modern Programming 2020", excluding term project.
 
 ## Notice
-Sorry, due to copyright reasons, since November 27, 2020, this warehouse will no longer provide data sets used in the code. 
+Sorry, due to copyright reasons, since November 27, 2020, this warehouse will no longer provide data sets used in the code.
 
 Affected File :
 - No copyright dataset files
@@ -15,18 +15,22 @@ If you need to use it, you can contact the author or the copyright owner of the 
 
 ## Contents
 
-|Week No.|Topic & Homework|
-| ------- | ------- |
-| 1  |   Get Started (No Homework)|
-| 2  |   [Text Data Analysis](https://github.com/HoBeedzc/MP_project/tree/master/week%202)|
-| 3  |   [Emotion Analysis](https://github.com/HoBeedzc/MP_project/tree/master/week%203)|
-| 4  |   Enjoy the National Day Holiday! (no homework)|
-| 5  |   [Network Analysis Package](https://github.com/HoBeedzc/MP_project/tree/master/week%205)|
-| 6  |   [`Class`: Preliminary](https://github.com/HoBeedzc/MP_project/tree/master/week%206)|
-| 7  |   [`Class`: Inheritance](https://github.com/HoBeedzc/MP_project/tree/master/week%207)|
-| 8  |   [Factory Model and Exception Handling](https://github.com/HoBeedzc/MP_project/tree/master/week%208)|
-| 9  |   [Proxy Model and Decorator](https://github.com/HoBeedzc/MP_project/tree/master/week%209)|
-| 10 |   [Iterator and Generator](https://github.com/HoBeedzc/MP_project/tree/master/week%210)|
-| 11 |   [Adapter Model and Abstract Class](https://github.com/HoBeedzc/MP_project/tree/master/week%2011)|
-| 12 |   [Multiprocessing Preliminary](https://github.com/HoBeedzc/MP_project/tree/master/week%2012)|
-
+| Week No. | Topic | Homework |
+| ------- | ------- | ------- |
+| 1  | Hello Python | Get Started (No Homework) |
+| 2  | Python Preliminary | [Text Data Analysis](https://github.com/HoBeedzc/MP_project/tree/master/week%202) |
+| 3  | Python Advance | [Emotion Analysis](https://github.com/HoBeedzc/MP_project/tree/master/week%203) |
+| 4  | Enjoy the National Day Holiday! |   Enjoy the National Day Holiday! (no homework)|
+| 5  | Package and Model | [Network Analysis Package](https://github.com/HoBeedzc/MP_project/tree/master/week%205)|
+| 6  | `Class`: Preliminary | [Creat a Simple Contact Book](https://github.com/HoBeedzc/MP_project/tree/master/week%206)|
+| 7  | `Class`: Inheritance | [Image Filter Tools](https://github.com/HoBeedzc/MP_project/tree/master/week%207)|
+| 8  | Factory Model and Exception Handling | [Carbon Emission Data Analysis](https://github.com/HoBeedzc/MP_project/tree/master/week%208)|
+| 9  | Proxy Model and Decorator | [Corpus Christi Clock](https://github.com/HoBeedzc/MP_project/tree/master/week%209)|
+| 10 | Iterator and Generator | [Random Walk and Face Data Analysis](https://github.com/HoBeedzc/MP_project/tree/master/week%210)|
+| 11 | Adapter Model and Abstract Class | [Plot Everything](https://github.com/HoBeedzc/MP_project/tree/master/week%2011)|
+| 12 | Multiprocessing Preliminary | [News Dataset Load](https://github.com/HoBeedzc/MP_project/tree/master/week%2012)|
+| 13 |  |  |
+| 14 |  |  |
+| 15 |  |  |
+| 16 |  |  |
+| 17 |  |  |
