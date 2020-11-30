@@ -136,11 +136,15 @@ class ArrayPlotter:
         pass
 
     def _plot_pca(self, data, *args, **kwargs):
+        dl = len(data)
+        dll = len(data[0])
+        data = [[data[i][k] for i in range(dl)] for k in range(dll)]
         pca = PCA(n_components=2)
         pca.fit(data)
         X_new = pca.transform(data)
+        print(len(X_new[:,0]))
         plt.scatter(X_new[:, 0], X_new[:, 1], marker='o', *args, **kwargs)
-        plt.title('ArrayPlot with dim {}, pac to 2'.format(len(data)))
+        plt.title('ArrayPlot with dim {}, pac to 2'.format(len(data[0])))
         plt.xlabel('X')
         plt.ylabel('Y')
         pass
