@@ -9,6 +9,11 @@ import sys
 class Map(Process):
     '''
     class Map, a subclass for Process
+    class properties: ID
+    instance properties: name, fq, rq
+    class methods: None
+    static methods: None
+    methods: get_news, read_news, send_res, run, write_log
     '''
     ID = 0
 
@@ -94,6 +99,11 @@ class Map(Process):
 class Reduce(Process):
     '''
     class Reduce, a subclass for Process
+    class properties: None
+    instance properties: name, rq, sp, res_dict, none_cnt, map_num
+    class methods: None
+    static methods: None
+    methods: receive_result, merge_result, send_summary, run, write_log
     '''
     def __init__(self, name, rq, sp: Pipe, map_num):
         super().__init__()
@@ -173,6 +183,11 @@ class Reduce(Process):
 class Distribute(Process):
     '''
     class Distribute, a subclass for Process
+    class properties: None
+    instance properties: name, fq, map_num
+    class methods: None
+    static methods: None
+    methods: put_none, put_file, run, write_log
     '''
     def __init__(self, name, fq: Queue, map_num):
         super().__init__()
@@ -230,6 +245,11 @@ class Distribute(Process):
 class Master:
     '''
     class Master
+    class properties: None
+    instance properties: map_num, map, distribute, reduce
+    class methods: None
+    static methods: None
+    methods: create_map_process, create_reduce_process, create_distribute_process, join_distribute_process, join_map_process, receive_summary, main, write_log
     '''
     def __init__(self, map_num):
         self.map_num = map_num
