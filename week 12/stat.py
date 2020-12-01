@@ -28,7 +28,7 @@ def plot():
 def main():
     print('begin')
     os.system(r'cd "e:\Program Products\Python Files\MP_project"')
-    for i in tqdm(range(1, 16)):
+    for i in tqdm(range(19, 21)):
         os.system(
             '>> "./week 12/runtimeinfo.txt" set /p="Map numbers : {} , " <nul'.
             format(i))
@@ -40,6 +40,23 @@ def main():
     pass
 
 
+def main_opti():
+    print('begin')
+    os.system(r'cd "e:\Program Products\Python Files\MP_project"')
+    for i in tqdm(range(8, 16)):
+        for j in tqdm(range(1, i + 1)):
+            os.system(
+                '>> "./week 12/runtimeinfo.txt" set /p="Map numbers : {} , Mid_R numbers : {}, " <nul'
+                .format(i, j))
+            os.system(
+                r'python "./week 12/mian-opti.py" {} {} >> "./week 12/runtimeinfo.txt"'
+                .format(i, j))
+    print('finish')
+    plot()
+    pass
+
+
 if __name__ == '__main__':
-    main()
+    # main()
+    main_opti()
     # plot()

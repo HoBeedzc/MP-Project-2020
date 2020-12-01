@@ -158,7 +158,7 @@ class Distribute(Process):
             self.write_log('{} puts None into file Queue.'.format(self.name))
             self.fq.put(None)
 
-    def put_file(self, path=r'./week 12/THUCN/test/'):
+    def put_file(self, path=r'./week 12/THUCN/4w/'):
         '''
         '''
         for file in os.listdir(path):

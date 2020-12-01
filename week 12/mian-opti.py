@@ -3,6 +3,7 @@ import time
 import pkuseg as ps
 from functools import wraps
 import os
+import sys
 
 
 class Map(Process):
@@ -221,7 +222,7 @@ class Distribute(Process):
             self.write_log('{} puts None into file Queue.'.format(self.name))
             self.fq.put(None)
 
-    def put_file(self, path=r'./week 12/THUCN/test/'):
+    def put_file(self, path=r'./week 12/THUCN/4w/'):
         '''
         '''
         for file in os.listdir(path):
@@ -354,10 +355,15 @@ def test(n1, n2):
     pass
 
 
+def run_from_shell():
+    test(int(sys.argv[1]), int(sys.argv[2]))
+    pass
+
+
 def main():
     test(5, 3)
 
 
 if __name__ == '__main__':
-    main()
+    run_from_shell()
     pass
