@@ -8,6 +8,7 @@ import sys
 
 class Map(Process):
     '''
+    class Map, a subclass for Process
     '''
     ID = 0
 
@@ -92,6 +93,7 @@ class Map(Process):
 
 class Reduce(Process):
     '''
+    class Reduce, a subclass for Process
     '''
     def __init__(self, name, rq, sp: Pipe, map_num):
         super().__init__()
@@ -170,6 +172,7 @@ class Reduce(Process):
 
 class Distribute(Process):
     '''
+    class Distribute, a subclass for Process
     '''
     def __init__(self, name, fq: Queue, map_num):
         super().__init__()
@@ -189,15 +192,20 @@ class Distribute(Process):
         for _ in range(self.map_num):
             self.write_log('{} puts None into file Queue.'.format(self.name))
             self.fq.put(None)
+        pass
 
     def put_file(self, path=r'./week 12/THUCN/test/'):
         '''
+        向队列中放入待处理的文件（向 Map 进程分发任务）
+        :param path: 文件夹路径
+        :return: None
         '''
         for file in os.listdir(path):
             file_path = os.path.join(path, file)
             self.write_log('{} puts {} into file Queue.'.format(
                 self.name, file_path))
             self.fq.put(file_path)
+        pass
 
     def run(self):
         self.logfile = open(r'./week 12/log/{}.txt'.format(self.name), 'w')
@@ -221,6 +229,7 @@ class Distribute(Process):
 
 class Master:
     '''
+    class Master
     '''
     def __init__(self, map_num):
         self.map_num = map_num
@@ -267,17 +276,25 @@ class Master:
 
     def join_distribute_process(self):
         '''
+        Master 进程等待 Distribute 进程
+        :return: None
         '''
         self.distribute.join()
         pass
 
     def join_map_process(self):
+        '''
+        Master 进程等待 Map 进程
+        :return: None
+        '''
         for i in self.map:
             i.join()
         pass
 
     def receive_summary(self, sp):
         '''
+        Master 进程从 Reduce 进程接收汇总数据
+        :return: 接收到的数据结果
         '''
         res = None
         while True:
@@ -302,9 +319,15 @@ class Master:
         pass
 
     def write_log(self, info):
+        '''
+        写入日志文件
+        :param info: 要写入的内容
+        :return: None
+        '''
         self.logfile.write(str(time.time()) + '\t')
         self.logfile.write(info)
         self.logfile.write('\n')
+        pass
 
 
 def show_running_time(func):
