@@ -1,8 +1,12 @@
-<h1 align='center'>
+<h1 align='center' herf='https://github.com/HoBeedzc/MP_project'>
     BUAA Modern Programming Project 2020
 </h1>
-<p align='center'>
-    Author:Hobee 
+<p align='center' herf='https://github.com/HoBeedzc'>
+    [!Author:Hobee](https://img.shields.io/badge/Author-Hobeedzc-orange) 
+    [![codebeat badge](https://codebeat.co/badges/46f6066b-d725-425b-9e63-e8e969d9ec1c)](https://codebeat.co/projects/github-com-hobeedzc-mp_project-master)
+    ![GitHub](https://img.shields.io/github/license/HoBeedzc/MP_project)
+    ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/HoBeedzc/MP_project)
+    [![GitHub stars](https://img.shields.io/github/stars/HoBeedzc/MP_project)](https://github.com/HoBeedzc/MP_project/stargazers)
 </p>
 
 ## MP_project
