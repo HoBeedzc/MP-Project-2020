@@ -1,6 +1,9 @@
 <h1 align='center'>
     BUAA Modern Programming Project 2020
 </h1>
+<p align='center'>
+    Author:Hobee 
+</p>
 
 ## MP_project
 
