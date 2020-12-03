@@ -1,6 +1,8 @@
-# BUAA Modern Programming Project 2020
+<h1 align='center'>
+    BUAA Modern Programming Project 2020
+</h1>
 
-<center> MP_project </center>
+## MP_project
 
 This repository includes all codes and slides in the course "Modern Programming 2020", excluding term project.
 
