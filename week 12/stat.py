@@ -14,7 +14,7 @@ def cut(data):
 
 
 def plot():
-    with open("./week 12/runtimeinfo.txt", 'r', encoding='utf-8') as f:
+    with open("./week 12/runtimeinfo_jieba.txt", 'r', encoding='utf-8') as f:
         lines = f.read().strip().split('\n')
         data = list(map(cut, lines))
     x = [i + 1 for i in range(len(data))]
@@ -56,7 +56,40 @@ def main_opti():
     pass
 
 
+def main_jieba():
+    print('begin')
+    os.system(r'cd "e:\Program Products\Python Files\MP_project"')
+    for i in tqdm(range(1, 26)):
+        os.system(
+            '>> "./week 12/runtimeinfo_jieba.txt" set /p="Map numbers : {} , " <nul'
+            .format(i))
+        os.system(
+            r'python "./week 12/mian_jieba.py" {} >> "./week 12/runtimeinfo_jieba.txt"'
+            .format(i))
+    print('finish')
+    plot()
+    pass
+
+
+def main_jiebe_opti():
+    print('begin')
+    os.system(r'cd "e:\Program Products\Python Files\MP_project"')
+    for i in tqdm(range(1, 21)):
+        for j in tqdm(range(1, i + 1)):
+            os.system(
+                '>> "./week 12/runtimeinfo_jieba_opti.txt" set /p="Map numbers : {} , Mid_R numbers : {}, " <nul'
+                .format(i, j))
+            os.system(
+                r'python "./week 12/mian_jieba-opti.py" {} {} >> "./week 12/runtimeinfo_jieba_opti.txt"'
+                .format(i, j))
+    print('finish')
+    plot()
+    pass
+
+
 if __name__ == '__main__':
     # main()
-    main_opti()
+    # main_opti()
+    # main_jieba()
+    main_jiebe_opti()
     # plot()
