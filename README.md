@@ -43,8 +43,8 @@ If you need to use it, you can contact the author or the copyright owner of the 
 | 9  | Proxy Model and Decorator | [Corpus Christi Clock](https://github.com/HoBeedzc/MP_project/tree/master/week%209)|
 | 10 | Iterator and Generator | [Random Walk and Face Data Analysis](https://github.com/HoBeedzc/MP_project/tree/master/week%210)|
 | 11 | Adapter Model and Abstract Class | [Plot Everything](https://github.com/HoBeedzc/MP_project/tree/master/week%2011)|
-| 12 | Multiprocessing Preliminary | [News Dataset Load](https://github.com/HoBeedzc/MP_project/tree/master/week%2012)|
-| 13 |  |  |
+| 12 | Multiprocessing | [News Dataset Load](https://github.com/HoBeedzc/MP_project/tree/master/week%2012)|
+| 13 | Multithreading | [51VOA Spider](https://github.com/HoBeedzc/MP_project/tree/master/week%2013) |
 | 14 |  |  |
 | 15 |  |  |
 | 16 |  |  |
