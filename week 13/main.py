@@ -18,8 +18,10 @@ class LogFileNotFoundError(FileNotFoundError):
 class CONFIG:
     '''
     '''
+    TOTAL_PAGES = 29
     ROOT_DOMAIN = r'https://www.51voa.com'
-    MASTR_URL = r'https://www.51voa.com/VOA_Standard_{}.html'
+    SUB_URL = r'/VOA_Special_English/'
+    MASTR_URL = r'https://www.51voa.com/Technology_Report_{}.html'
     HEAD = {
         'user-agent':
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36'
@@ -28,10 +30,10 @@ class CONFIG:
     MP3_QUEUE = queue.Queue()
     MESSAGE_QUEUE = queue.Queue()
     START_TIME = time.time()
-    SPIDER_NUM = 5
-    COMPLETE_LIST = [i for i in range(0, 36)]
+    SPIDER_NUM = 10
+    COMPLETE_LIST = [i for i in range(0, TOTAL_PAGES + 1)]
     COMPLETE_MP3 = [[0 for __ in range(50)]] + [[1 for __ in range(50)]
-                                                for _ in range(0, 35)]
+                                                for _ in range(0, TOTAL_PAGES)]
     LOCK = Lock()
 
     @staticmethod
@@ -48,6 +50,7 @@ class CONFIG:
     def get_html(url):
         '''
         '''
+        # url = re.sub(r'\.[0-9a-zA-z]*\.com', '.51voa.com', url)
         for i in range(11):
             try:
                 r = rs.get(url, headers=CONFIG.HEAD)
@@ -55,10 +58,10 @@ class CONFIG:
                     return r
             except rs.exceptions.ProxyError:
                 continue
-            time.sleep(1)
             if i == 10:
                 raise UrlResponError(
-                    'Unable to get an effective response from {}!'.format(url))
+                    'Unable to get an effective response from {}! {}'.format(
+                        url, r))
 
     @staticmethod
     def send_message(message):
@@ -200,13 +203,17 @@ class ArticleSpider(Thread):
         r.encoding = 'utf-8'
         soup = bs(r.content, 'lxml')
         mp3_url = soup.find('div', class_='menubar')
+        try:  # 尝试获取MP3url
+            mp3url = mp3_url.find('a', id='mp3').get('href')
+        except AttributeError:
+            mp3url = None
         try:  # 尝试获取字幕链接
             lrcurl = CONFIG.ROOT_DOMAIN + mp3_url.find('a',
                                                        id='lrc').get('href')
         except AttributeError:
             lrcurl = None
         try:  # 尝试获取翻译链接
-            translateurl = CONFIG.ROOT_DOMAIN + r'/VOA_Standard_English/' + mp3_url.find(
+            translateurl = CONFIG.ROOT_DOMAIN + CONFIG.SUB_URL + mp3_url.find(
                 'a', id='EnPage').get('href')
         except AttributeError:
             translateurl = None
@@ -214,7 +221,7 @@ class ArticleSpider(Thread):
             'No': self.curnum,
             'subNo': self.curmp3num,
             'title': self.curtitle,
-            'mp3': mp3_url.find('a', id='mp3').get('href'),
+            'mp3': mp3url,
             'lrc': lrcurl,
             'translate': translateurl
         }
@@ -259,6 +266,7 @@ class ArticleSpider(Thread):
             if urls_dict is None:
                 break
             else:
+                self.curmp3num = -1
                 for self.curtitle, self.cururl in self.curdict.items():
                     self.curmp3num += 1
                     self.get_url()
@@ -308,10 +316,27 @@ class MP3Spider(Thread):
             self.curlrcurl = mp3_info['lrc']
             return 1
 
+    def error_log(self):
+        '''
+        '''
+        with open('./week 13/error.log', 'a+') as f:
+            f.write('file : {},{},{},{} download error at time {} s!'.format(
+                self.curnum, self.curmp3num, self.curtitle, self.curmp3url,
+                time.time() - CONFIG.START_TIME))
+            f.write('\n')
+        pass
+
     def get_music(self, save_to):
         '''
         '''
-        r = CONFIG.get_html(self.curmp3url)
+        if self.curmp3url is None:
+            self.error_log()
+            return -1
+        try:
+            r = CONFIG.get_html(self.curmp3url)
+        except UrlResponError:
+            self.error_log()
+            return -1
         r.encoding = 'utf-8'
         with open(save_to, 'wb') as f:
             f.write(r.content)
@@ -324,7 +349,10 @@ class MP3Spider(Thread):
         '''
         if self.curlrcurl is None:
             return -1
-        r = CONFIG.get_html(self.curlrcurl)
+        try:
+            r = CONFIG.get_html(self.curlrcurl)
+        except UrlResponError:
+            return -1
         r.encoding = 'utf-8'
         with open(save_to, 'wb') as f:
             f.write(r.content)
@@ -340,8 +368,7 @@ class MP3Spider(Thread):
     def send_none(self):
         '''
         '''
-        for _ in range(CONFIG.SPIDER_NUM):
-            CONFIG.MESSAGE_QUEUE.put(None)
+        CONFIG.MESSAGE_QUEUE.put(None)
 
     def update_mp3_state(self):
         '''
@@ -442,9 +469,6 @@ class SpiderMonitor(Thread):
         self.cnf()
         while True:
             flag = self.get_state()
-            if flag is None:
-                print('Complete')
-                break
             os.system('cls')
             stat = '''Run Time : {} s\nSpider Rate : {}/{}\nMemory Usaged : {} MB\nRemain Time : {} s, Remain Menory : {} MB\nNumer of Running Spiders : {}'''.format(
                 self.run_time, self.cnt_num, self.num_of_files,
@@ -452,6 +476,9 @@ class SpiderMonitor(Thread):
                 self.remain_mem / (1024 * 1024),
                 CONFIG.SPIDER_NUM - self.nonecnt)
             print(stat)
+            if flag is None:
+                print('Complete')
+                break
 
 
 class SpiderRecovery(Thread):
@@ -475,7 +502,7 @@ class SpiderRecovery(Thread):
         with open(path, 'a+') as f:
             f.write(str(backup_dict))
             f.write('\n')
-        print('Back Up at {} s'.format(backup_dict['time']))
+        print('Back Up at {}'.format(backup_dict['time']))
         pass
 
     @staticmethod
