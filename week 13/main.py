@@ -1,10 +1,8 @@
 import os
-import sys
 import requests as rs
 import re
 from bs4 import BeautifulSoup as bs
 import time
-from faker import Faker
 from threading import Thread, Lock
 import queue
 
@@ -56,12 +54,11 @@ class CONFIG:
                 if r.status_code == 200:
                     return r
             except rs.exceptions.ProxyError:
-                if i == 10:
-                    raise UrlResponError(
-                        'Unable to get an effective response from {}!'.format(
-                            url))
-                else:
-                    continue
+                continue
+            time.sleep(1)
+            if i == 10:
+                raise UrlResponError(
+                    'Unable to get an effective response from {}!'.format(url))
 
     @staticmethod
     def send_message(message):
@@ -90,13 +87,14 @@ class MainPageSpider(Thread):
         '''
         r = CONFIG.get_html(CONFIG.MASTR_URL.format(self.curnum))
         r.encoding = 'utf-8'
-        soup = bs(r, 'lxml')
+        soup = bs(r.content, 'lxml')
         sub_url = soup.find('div', class_='List')
         urls = sub_url.find_all('li')
         urls_dict = {}
         for i in urls:
-            urls_dict[' '.join(
-                i.text.split())] = CONFIG.ROOT_DOMAIN + i.a.get('href')
+            temptitle = ' '.join(i.text.split())
+            temptitle = re.sub(r'[\/:*?"<>|]', '_', temptitle)
+            urls_dict[temptitle] = CONFIG.ROOT_DOMAIN + i.a.get('href')
         return urls_dict
 
     def send_urls_dict(self, urls_dict: dict):
@@ -126,7 +124,7 @@ class MainPageSpider(Thread):
     def run(self):
         for i in CONFIG.COMPLETE_LIST:
             if i != 0:
-                self.curnum = id
+                self.curnum = i
             else:
                 continue
             res = self.get_url_list()
@@ -143,7 +141,7 @@ class ArticleSpider(Thread):
         super().__init__()
         self.r = None
         self.curnum = None
-        self.curmp3num = 0
+        self.curmp3num = -1
         self.curdict = None
         self.curtitle = None
         self.cururl = None
@@ -157,7 +155,7 @@ class ArticleSpider(Thread):
             return None
         else:
             self.curnum = urls_dict['No']
-            self.curnum = urls_dict['urls']
+            self.curdict = urls_dict['urls']
             return 1
 
     def get_url(self):
@@ -171,12 +169,24 @@ class ArticleSpider(Thread):
         '''
         r = self.r
         r.encoding = 'utf-8'
-        soup = bs(r, 'lxml')
+        soup = bs(r.content, 'lxml')
         article = soup.find('div', class_='Content')
+        author = article.find('span', class_='byline')
+        datetime = article.find('span', class_='datetime')
         res = []
+        if author is None:  # 确定网页中是否有创作者信息
+            pass
+        else:
+            res.append(author.text)
+        if datetime is None:  # 确定网页中是否有日期信息
+            pass
+        else:
+            res.append(datetime.text)
         for i in article.find_all('p'):
             res.append(' '.join(i.text.split()))
         with open(save_to, 'w', encoding='utf-8') as f:
+            f.write(self.curtitle)
+            f.write('\n')
             for i in res:
                 f.write(i)
                 f.write('\n')
@@ -188,36 +198,43 @@ class ArticleSpider(Thread):
         '''
         r = self.r
         r.encoding = 'utf-8'
-        soup = bs(r, 'lxml')
+        soup = bs(r.content, 'lxml')
         mp3_url = soup.find('div', class_='menubar')
+        try:  # 尝试获取字幕链接
+            lrcurl = CONFIG.ROOT_DOMAIN + mp3_url.find('a',
+                                                       id='lrc').get('href')
+        except AttributeError:
+            lrcurl = None
+        try:  # 尝试获取翻译链接
+            translateurl = CONFIG.ROOT_DOMAIN + r'/VOA_Standard_English/' + mp3_url.find(
+                'a', id='EnPage').get('href')
+        except AttributeError:
+            translateurl = None
         mp3_info_dict = {
-            'No':
-            self.curnum,
-            'subNo':
-            self.curmp3num,
-            'title':
-            self.curtitle,
-            'mp3':
-            mp3_url.find('a', id='mp3').get('href'),
-            'lrc':
-            CONFIG.ROOT_DOMAIN + mp3_url.find('a', id='lrc').get('href'),
-            'translate':
-            CONFIG.ROOT_DOMAIN + r'/VOA_Standard_English/' +
-            mp3_url.find('a', id='EnPage').get('href')
+            'No': self.curnum,
+            'subNo': self.curmp3num,
+            'title': self.curtitle,
+            'mp3': mp3_url.find('a', id='mp3').get('href'),
+            'lrc': lrcurl,
+            'translate': translateurl
         }
         return mp3_info_dict
 
-    def get_translate(url, save_to):
+    def get_translate(self, url, save_to):
         '''
         '''
+        if url is None:
+            return -1
         r = CONFIG.get_html(url)
         r.encoding = 'utf-8'
-        soup = bs(r, 'lxml')
+        soup = bs(r.content, 'lxml')
         article = soup.find('div', class_='Content')
         res = []
         for i in article.find_all('p'):
             res.append(' '.join(i.text.split()))
         with open(save_to, 'w', encoding='utf-8') as f:
+            f.write(self.curtitle)
+            f.write('\n')
             for i in res:
                 f.write(i)
                 f.write('\n')
@@ -230,7 +247,7 @@ class ArticleSpider(Thread):
         CONFIG.MP3_QUEUE.put(mp3_info_dict)
         pass
 
-    def send_none():
+    def send_none(self):
         '''
         '''
         for _ in range(CONFIG.SPIDER_NUM):
@@ -247,12 +264,14 @@ class ArticleSpider(Thread):
                     self.get_url()
                     self.get_article(
                         r'./week 13/51voa/{}/article/{}.txt'.format(
-                            self.curnum, self.curtitle))
+                            self.curnum,
+                            str(self.curmp3num) + ' ' + self.curtitle))
                     mp3_info = self.get_mp3_info()
                     self.get_translate(
                         mp3_info['translate'],
                         r'./week 13/51voa/{}/translate/{}.txt'.format(
-                            self.curnum, self.curtitle))
+                            self.curnum,
+                            str(self.curmp3num) + ' ' + self.curtitle))
                     self.send_mp3_info(mp3_info)
         self.send_none()
         pass
@@ -294,7 +313,7 @@ class MP3Spider(Thread):
         '''
         r = CONFIG.get_html(self.curmp3url)
         r.encoding = 'utf-8'
-        with open(save_to, 'w', encoding='utf-8') as f:
+        with open(save_to, 'wb') as f:
             f.write(r.content)
             f.flush()
         self.curmem = os.path.getsize(save_to)
@@ -303,9 +322,11 @@ class MP3Spider(Thread):
     def get_lrc(self, save_to):
         '''
         '''
+        if self.curlrcurl is None:
+            return -1
         r = CONFIG.get_html(self.curlrcurl)
         r.encoding = 'utf-8'
-        with open(save_to, 'w', encoding='utf-8') as f:
+        with open(save_to, 'wb') as f:
             f.write(r.content)
             f.flush()
         pass
@@ -327,6 +348,12 @@ class MP3Spider(Thread):
         '''
         CONFIG.COMPLETE_MP3[self.curnum][self.curmp3num] = 0
 
+    def write_md(self):
+        '''
+        '''
+        # 不想写了，要实现也不是不可以...累了累了
+        pass
+
     def run(self):
         while True:
             res = self.get_mp3_info()
@@ -335,10 +362,12 @@ class MP3Spider(Thread):
             elif res == 0:
                 continue
             else:
-                self.get_music(r'./week 13/51voa/{}/mp3/{}.txt'.format(
-                    self.curnum, self.curtitle))
-                self.get_lrc(r'./week 13/51voa/{}/lrc/{}.txt'.format(
-                    self.curnum, self.curtitle))
+                self.get_music(r'./week 13/51voa/{}/mp3/{}.mp3'.format(
+                    self.curnum,
+                    str(self.curmp3num) + ' ' + self.curtitle))
+                self.get_lrc(r'./week 13/51voa/{}/lrc/{}.lrc'.format(
+                    self.curnum,
+                    str(self.curmp3num) + ' ' + self.curtitle))
                 self.send_mem_info()
                 self.update_mp3_state()
         self.send_none()
@@ -416,14 +445,13 @@ class SpiderMonitor(Thread):
             if flag is None:
                 print('Complete')
                 break
-            os.system('clear')
-            stat = '''Run Time : {} s\nSpider Rate : {}/{}\nMemory Usaged : {} MB\nRemain Time : {} s, Remain Menory : {} MB\n, Numer of Running Spiders : {}'''.format(
+            os.system('cls')
+            stat = '''Run Time : {} s\nSpider Rate : {}/{}\nMemory Usaged : {} MB\nRemain Time : {} s, Remain Menory : {} MB\nNumer of Running Spiders : {}'''.format(
                 self.run_time, self.cnt_num, self.num_of_files,
                 self.cnt_mem / (1024 * 1024), self.remain_time,
                 self.remain_mem / (1024 * 1024),
                 CONFIG.SPIDER_NUM - self.nonecnt)
             print(stat)
-            time.sleep(1)
 
 
 class SpiderRecovery(Thread):
@@ -447,6 +475,7 @@ class SpiderRecovery(Thread):
         with open(path, 'a+') as f:
             f.write(str(backup_dict))
             f.write('\n')
+        print('Back Up at {} s'.format(backup_dict['time']))
         pass
 
     @staticmethod
@@ -477,7 +506,7 @@ class SpiderRecovery(Thread):
                 break
             else:
                 self.backup()
-                time.sleep(60)
+                time.sleep(30)
         pass
 
 
@@ -485,11 +514,69 @@ class Master:
     '''
     '''
     def __init__(self):
+        self.MPS = None
+        self.AS_list = []
+        self.MS_list = []
+        self.SM = None
+        self.SR = None
         pass
 
-    def creat_
+    def _creat_MPS(self):
+        self.MPS = MainPageSpider()
+        self.MPS.start()
+        pass
+
+    def _creat_AS(self):
+        for _ in range(CONFIG.SPIDER_NUM):
+            self.AS_list.append(ArticleSpider())
+        for i in self.AS_list:
+            i.start()
+        pass
+
+    def _creat_MS(self):
+        for _ in range(CONFIG.SPIDER_NUM):
+            self.MS_list.append(MP3Spider())
+        for i in self.MS_list:
+            i.start()
+        pass
+
+    def _creat_SM(self):
+        self.SM = SpiderMonitor()
+        self.SM.start()
+        pass
+
+    def _creat_SR(self):
+        self.SR = SpiderRecovery()
+        self.SR.start()
+        pass
+
+    def creat_all(self):
+        '''
+        '''
+        self._creat_MPS()
+        self._creat_AS()
+        self._creat_MS()
+        self._creat_SM()
+        self._creat_SR()
+        pass
+
+    def join_all(self):
+        '''
+        '''
+        self.MPS.join()
+        for i in self.AS_list:
+            i.join()
+        for i in self.MS_list:
+            i.join()
+        self.SM.join()
+        self.SR.join()
+        pass
 
     def run(self):
+        SpiderRecovery.recovery()
+        self.creat_all()
+        self.join_all()
+        print('Finish')
         pass
 
 
