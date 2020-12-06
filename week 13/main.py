@@ -24,6 +24,9 @@ class CONFIG:
     }
     URL_QUEUE = queue.Queue()
     MP3_QUEUE = queue.Queue()
+    MESSAGE_QUEUE = queue.Queue()
+    START_TIME = time.time()
+    SPIDER_NUM = 5
 
     @staticmethod
     def get_html(url):
@@ -41,6 +44,19 @@ class CONFIG:
                             url))
                 else:
                     continue
+
+    @staticmethod
+    def send_message(message):
+        '''
+        '''
+        CONFIG.MESSAGE_QUEUE.put(message)
+        pass
+
+    @staticmethod
+    def receive_message():
+        '''
+        '''
+        return CONFIG.MESSAGE_QUEUE.get()
 
 
 class MainPageSpider(Thread):
@@ -72,6 +88,12 @@ class MainPageSpider(Thread):
         CONFIG.URL_QUEUE.put(res)
         pass
 
+    def send_none(self):
+        '''
+        '''
+        for _ in range(CONFIG.SPIDER_NUM):
+            CONFIG.URL_QUEUE.put(None)
+
     def creat_folder(self):
         '''
         '''
@@ -88,7 +110,7 @@ class MainPageSpider(Thread):
             res = self.get_url_list()
             self.send_urls_dict(res)
             self.creat_folder()
-        CONFIG.URL_QUEUE.put(None)
+        self.send_none()
         pass
 
 
@@ -183,6 +205,12 @@ class ArticleSpider(Thread):
         CONFIG.MP3_QUEUE.put(mp3_info_dict)
         pass
 
+    def send_none():
+        '''
+        '''
+        for _ in range(CONFIG.SPIDER_NUM):
+            CONFIG.MP3_QUEUE.put(None)
+
     def run(self):
         while True:
             urls_dict = self.get_urls_dict()
@@ -200,7 +228,7 @@ class ArticleSpider(Thread):
                         r'./week 13/51voa/{}/translate/{}.txt'.format(
                             self.curnum, self.curtitle))
                     self.send_mp3_info(mp3_info)
-        self.send_mp3_info(None)
+        self.send_none()
         pass
 
 
@@ -213,6 +241,8 @@ class MP3Spider(Thread):
         self.curtitle = None
         self.curmp3url = None
         self.curlrcurl = None
+        self.curmem = None
+        self.nonecnt = 0
         pass
 
     def get_mp3_info(self):
@@ -220,7 +250,10 @@ class MP3Spider(Thread):
         '''
         mp3_info = CONFIG.MP3_QUEUE.get()
         if mp3_info is None:
-            return None
+            self.nonecnt += 1
+            if self.nonecnt == CONFIG.SPIDER_NUM:
+                return None
+            return 0
         else:
             self.curnum = mp3_info['No']
             self.curtitle = mp3_info['title']
@@ -248,16 +281,32 @@ class MP3Spider(Thread):
             f.flush()
         pass
 
+    def send_mem_info(self):
+        '''
+        '''
+        CONFIG.send_message(self.curmem)
+        pass
+
+    def send_none():
+        '''
+        '''
+        for _ in range(CONFIG.SPIDER_NUM):
+            CONFIG.MESSAGE_QUEUE.put(None)
+
     def run(self):
         while True:
             res = self.get_mp3_info()
             if res is None:
                 break
+            elif res == 0:
+                continue
             else:
                 self.get_music(r'./week 13/51voa/{}/mp3/{}.txt'.format(
                     self.curnum, self.curtitle))
                 self.get_lrc(r'./week 13/51voa/{}/lrc/{}.txt'.format(
                     self.curnum, self.curtitle))
+                self.send_mem_info()
+        self.send_none()
         pass
 
 
@@ -266,10 +315,67 @@ class SpiderMonitor(Thread):
     '''
     def __init__(self):
         super().__init__()
+        self.num_of_files = 35 * 50
+        self.cnt_num = 0
+        self.cnt_mem = 0
+        self.run_time = 0
+        self.remain_time = 0
+        self.remain_mem = 0
+        self.nonecnt = 0
         pass
 
-    def run(self):
+    def cot(self):
+        '''
+        cot stand for continuous operation time
+        '''
+        self.run_time = time.time() - CONFIG.START_TIME
         pass
+
+    def etc(self):
+        '''
+        etc stand for estimated time of completion
+        '''
+        temp = self.num_of_files * self.run_time / self.cnt_num
+        self.remain_time = temp - self.run_time
+        pass
+
+    def emc(self):
+        '''
+        emc stand for estimated memory of completion
+        '''
+        temp = self.num_of_files * self.cnt_mem / self.cnt_num
+        self.remain_mem = temp - self.cnt_mem
+        pass
+
+    def get_state(self):
+        '''
+        '''
+        message = CONFIG.receive_message()
+        if message is None:
+            self.nonecnt += 1
+            if self.nonecnt == CONFIG.SPIDER_NUM:
+                return None
+            return 0
+        self.cnt_num += 1
+        self.cnt_mem += message
+        self.cot()
+        self.etc()
+        self.emc()
+        return -1
+
+    def run(self):
+        while True:
+            flag = self.get_state()
+            if flag is None:
+                print('Complete')
+                break
+            os.system('clear')
+            stat = '''Run Time : {}\nSpider Rate : {}/{}\nMemory Usaged : {}\nRemain Time : {}, Remain Menory : {}\n, Numer of Running Spiders : {}'''.format(
+                self.run_time, self.cnt_num, self.num_of_files, self.cnt_mem,
+                self.remain_time, self.remain_mem,
+                CONFIG.SPIDER_NUM - self.nonecnt)
+            print(stat)
+            time.sleep(1)
 
 
 class SpiderRecovery(Thread):
@@ -277,6 +383,16 @@ class SpiderRecovery(Thread):
     '''
     def __init__(self):
         super().__init__()
+        pass
+
+    def backup(self):
+        '''
+        '''
+        pass
+
+    def recovery(self):
+        '''
+        '''
         pass
 
     def run(self):
