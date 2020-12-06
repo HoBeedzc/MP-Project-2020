@@ -5,11 +5,15 @@ import re
 from bs4 import BeautifulSoup as bs
 import time
 from faker import Faker
-from threading import Thread
+from threading import Thread, Lock
 import queue
 
 
 class UrlResponError(OSError):
+    pass
+
+
+class LogFileNotFoundError(FileNotFoundError):
     pass
 
 
@@ -27,6 +31,20 @@ class CONFIG:
     MESSAGE_QUEUE = queue.Queue()
     START_TIME = time.time()
     SPIDER_NUM = 5
+    COMPLETE_LIST = [i for i in range(0, 36)]
+    COMPLETE_MP3 = [[0 for __ in range(50)]] + [[1 for __ in range(50)]
+                                                for _ in range(0, 35)]
+    LOCK = Lock()
+
+    @staticmethod
+    def refresh_status():
+        '''
+        '''
+        with CONFIG.LOCK:
+            for i in range(len(CONFIG.COMPLETE_MP3)):
+                if sum(CONFIG.COMPLETE_MP3[i]) == 0:
+                    CONFIG.COMPLETE_LIST[i] = 0
+        pass
 
     @staticmethod
     def get_html(url):
@@ -106,7 +124,11 @@ class MainPageSpider(Thread):
         pass
 
     def run(self):
-        for self.curnum in range(1, 36):
+        for i in CONFIG.COMPLETE_LIST:
+            if i != 0:
+                self.curnum = id
+            else:
+                continue
             res = self.get_url_list()
             self.send_urls_dict(res)
             self.creat_folder()
@@ -121,6 +143,7 @@ class ArticleSpider(Thread):
         super().__init__()
         self.r = None
         self.curnum = None
+        self.curmp3num = 0
         self.curdict = None
         self.curtitle = None
         self.cururl = None
@@ -170,6 +193,8 @@ class ArticleSpider(Thread):
         mp3_info_dict = {
             'No':
             self.curnum,
+            'subNo':
+            self.curmp3num,
             'title':
             self.curtitle,
             'mp3':
@@ -218,6 +243,7 @@ class ArticleSpider(Thread):
                 break
             else:
                 for self.curtitle, self.cururl in self.curdict.items():
+                    self.curmp3num += 1
                     self.get_url()
                     self.get_article(
                         r'./week 13/51voa/{}/article/{}.txt'.format(
@@ -238,6 +264,7 @@ class MP3Spider(Thread):
     def __init__(self):
         super().__init__()
         self.curnum = None
+        self.curmp3num = None
         self.curtitle = None
         self.curmp3url = None
         self.curlrcurl = None
@@ -256,6 +283,7 @@ class MP3Spider(Thread):
             return 0
         else:
             self.curnum = mp3_info['No']
+            self.curmp3num = mp3_info['subNo']
             self.curtitle = mp3_info['title']
             self.curmp3url = mp3_info['mp3']
             self.curlrcurl = mp3_info['lrc']
@@ -269,6 +297,7 @@ class MP3Spider(Thread):
         with open(save_to, 'w', encoding='utf-8') as f:
             f.write(r.content)
             f.flush()
+        self.curmem = os.path.getsize(save_to)
         pass
 
     def get_lrc(self, save_to):
@@ -287,11 +316,16 @@ class MP3Spider(Thread):
         CONFIG.send_message(self.curmem)
         pass
 
-    def send_none():
+    def send_none(self):
         '''
         '''
         for _ in range(CONFIG.SPIDER_NUM):
             CONFIG.MESSAGE_QUEUE.put(None)
+
+    def update_mp3_state(self):
+        '''
+        '''
+        CONFIG.COMPLETE_MP3[self.curnum][self.curmp3num] = 0
 
     def run(self):
         while True:
@@ -306,6 +340,7 @@ class MP3Spider(Thread):
                 self.get_lrc(r'./week 13/51voa/{}/lrc/{}.txt'.format(
                     self.curnum, self.curtitle))
                 self.send_mem_info()
+                self.update_mp3_state()
         self.send_none()
         pass
 
@@ -315,13 +350,24 @@ class SpiderMonitor(Thread):
     '''
     def __init__(self):
         super().__init__()
-        self.num_of_files = 35 * 50
+        self.num_of_files = 0
         self.cnt_num = 0
         self.cnt_mem = 0
         self.run_time = 0
         self.remain_time = 0
         self.remain_mem = 0
         self.nonecnt = 0
+        pass
+
+    def cnf(self):
+        '''
+        cnf stand for caculate number of files
+        '''
+        flag = 0
+        for i in CONFIG.COMPLETE_LIST:
+            if i != 0:
+                flag += 1
+        self.num_of_files = flag * 50
         pass
 
     def cot(self):
@@ -364,15 +410,17 @@ class SpiderMonitor(Thread):
         return -1
 
     def run(self):
+        self.cnf()
         while True:
             flag = self.get_state()
             if flag is None:
                 print('Complete')
                 break
             os.system('clear')
-            stat = '''Run Time : {}\nSpider Rate : {}/{}\nMemory Usaged : {}\nRemain Time : {}, Remain Menory : {}\n, Numer of Running Spiders : {}'''.format(
-                self.run_time, self.cnt_num, self.num_of_files, self.cnt_mem,
-                self.remain_time, self.remain_mem,
+            stat = '''Run Time : {} s\nSpider Rate : {}/{}\nMemory Usaged : {} MB\nRemain Time : {} s, Remain Menory : {} MB\n, Numer of Running Spiders : {}'''.format(
+                self.run_time, self.cnt_num, self.num_of_files,
+                self.cnt_mem / (1024 * 1024), self.remain_time,
+                self.remain_mem / (1024 * 1024),
                 CONFIG.SPIDER_NUM - self.nonecnt)
             print(stat)
             time.sleep(1)
@@ -383,19 +431,53 @@ class SpiderRecovery(Thread):
     '''
     def __init__(self):
         super().__init__()
+        self.id = 0
         pass
 
-    def backup(self):
+    def backup(self, path=r'./week 13/.log'):
         '''
         '''
+        CONFIG.refresh_status()
+        backup_dict = {
+            'id': self.id,
+            'time': '{} s'.format(time.time() - CONFIG.START_TIME),
+            'state': CONFIG.COMPLETE_LIST
+        }
+        self.id += 1
+        with open(path, 'a+') as f:
+            f.write(str(backup_dict))
+            f.write('\n')
         pass
 
-    def recovery(self):
+    @staticmethod
+    def recovery(path=r'./week 13/.log'):
         '''
         '''
+        if not os.path.exists(path):
+            raise LogFileNotFoundError('No such log file {} !'.format(path))
+        with open(path, 'r') as f:
+            lines = f.read().strip().split('\n')
+            data = lines[-1]
+        if data == '':
+            print('No data to recovery')
+            return None
+        else:
+            data = eval(data)
+            with CONFIG.LOCK:
+                CONFIG.COMPLETE_LIST = data['state']
+                for i in range(len(CONFIG.COMPLETE_LIST)):
+                    if CONFIG.COMPLETE_LIST[i] == 0:
+                        CONFIG.COMPLETE_MP3[i] = [0 for _ in range(50)]
+            print('Successfully recovery to time : {}'.format(data['time']))
         pass
 
     def run(self):
+        while True:
+            if sum(CONFIG.COMPLETE_LIST) == 0:
+                break
+            else:
+                self.backup()
+                time.sleep(60)
         pass
 
 
@@ -405,11 +487,15 @@ class Master:
     def __init__(self):
         pass
 
+    def creat_
+
     def run(self):
         pass
 
 
 def main():
+    t = Master()
+    t.run()
     pass
 
 
