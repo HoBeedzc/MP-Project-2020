@@ -33,7 +33,7 @@ def main():
             '>> "./week 12/runtimeinfo.txt" set /p="Map numbers : {} , " <nul'.
             format(i))
         os.system(
-            r'python "./week 12/mian.py" {} >> "./week 12/runtimeinfo.txt"'.
+            r'python "./week 12/main.py" {} >> "./week 12/runtimeinfo.txt"'.
             format(i))
     print('finish')
     plot()
@@ -80,7 +80,7 @@ def main_jiebe_opti():
                 '>> "./week 12/runtimeinfo_jieba_opti.txt" set /p="Map numbers : {} , Mid_R numbers : {}, " <nul'
                 .format(i, j))
             os.system(
-                r'python "./week 12/mian_jieba-opti.py" {} {} >> "./week 12/runtimeinfo_jieba_opti.txt"'
+                r'python "./week 12/main_jieba-opti.py" {} {} >> "./week 12/runtimeinfo_jieba_opti.txt"'
                 .format(i, j))
     print('finish')
     plot()
@@ -88,8 +88,8 @@ def main_jiebe_opti():
 
 
 if __name__ == '__main__':
-    # main()
+    main()
     # main_opti()
     # main_jieba()
-    main_jiebe_opti()
+    # main_jiebe_opti()
     # plot()
