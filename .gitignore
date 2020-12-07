@@ -136,6 +136,4 @@ THUCN/
 pythonenv3.8
 .idea/
 51voa/
-log/
-runtimeinfo/
-runtimeinfo_jieba/
+51voa_slow/
