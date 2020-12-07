@@ -17,6 +17,7 @@ class LogFileNotFoundError(FileNotFoundError):
 
 class CONFIG:
     '''
+    class CONFIG
     '''
     TOTAL_PAGES = 29
     ROOT_DOMAIN = r'https://www.51voa.com'
@@ -39,6 +40,7 @@ class CONFIG:
     @staticmethod
     def refresh_status():
         '''
+        目标数据爬取状态刷新
         '''
         with CONFIG.LOCK:
             for i in range(len(CONFIG.COMPLETE_MP3)):
@@ -49,6 +51,9 @@ class CONFIG:
     @staticmethod
     def get_html(url):
         '''
+        获取目标网页 html 源码
+        :param url: 要访问的网站 url
+        :return: 基于 requests 库的返回结果
         '''
         # url = re.sub(r'\.[0-9a-zA-z]*\.com', '.51voa.com', url)
         for i in range(11):
@@ -66,6 +71,9 @@ class CONFIG:
     @staticmethod
     def send_message(message):
         '''
+        向信息队列中发送信息。 该队列仅供传输控制台信息使用
+        :param message: 要发送的信息
+        :return: None
         '''
         CONFIG.MESSAGE_QUEUE.put(message)
         pass
@@ -79,6 +87,7 @@ class CONFIG:
 
 class MainPageSpider(Thread):
     '''
+    class MainPageSpider, a subclass for Thread.
     '''
     def __init__(self):
         super().__init__()
@@ -87,6 +96,8 @@ class MainPageSpider(Thread):
 
     def get_url_list(self):
         '''
+        获取主目录下各个文章的 url 列表
+        :return: 各个文章的 url （以字典形式存放）
         '''
         r = CONFIG.get_html(CONFIG.MASTR_URL.format(self.curnum))
         r.encoding = 'utf-8'
@@ -102,6 +113,9 @@ class MainPageSpider(Thread):
 
     def send_urls_dict(self, urls_dict: dict):
         '''
+        向 URL 队列中放入 url 字典
+        :param urls_dict: 要放入的 url 字典
+        :return: None
         '''
         res = {'No': self.curnum, 'urls': urls_dict}
         CONFIG.URL_QUEUE.put(res)
@@ -109,12 +123,15 @@ class MainPageSpider(Thread):
 
     def send_none(self):
         '''
+        向 URL 队列中放入 None
+        :return: None
         '''
         for _ in range(CONFIG.SPIDER_NUM):
             CONFIG.URL_QUEUE.put(None)
 
     def creat_folder(self):
         '''
+        检查相应文件路径并创建
         '''
         for i in ['mp3', 'lrc', 'article', 'translate', 'markdowm']:
             dirpath = './week 13/51voa/{}/{}'.format(self.curnum, i)
@@ -139,6 +156,7 @@ class MainPageSpider(Thread):
 
 class ArticleSpider(Thread):
     '''
+    class ArticleSpider, a subclass for Thread.
     '''
     def __init__(self):
         super().__init__()
@@ -152,6 +170,8 @@ class ArticleSpider(Thread):
 
     def get_urls_dict(self):
         '''
+        从 url 队列中获取 url 字典
+        :return: 1 for success, None for failed
         '''
         urls_dict = CONFIG.URL_QUEUE.get()
         if urls_dict is None:
@@ -163,12 +183,17 @@ class ArticleSpider(Thread):
 
     def get_url(self):
         '''
+        获取要爬取的文章的 html 源码
+        :return: None
         '''
         self.r = CONFIG.get_html(self.cururl)
         pass
 
     def get_article(self, save_to):
         '''
+        获取要爬取的文章的内容
+        :param save_to: 文件储存路径
+        :return: None
         '''
         r = self.r
         r.encoding = 'utf-8'
@@ -198,6 +223,8 @@ class ArticleSpider(Thread):
 
     def get_mp3_info(self):
         '''
+        获取要爬取的 MP3 信息
+        :return: 要爬取的 MP3 信息 （以字典形式存放） 
         '''
         r = self.r
         r.encoding = 'utf-8'
@@ -229,6 +256,10 @@ class ArticleSpider(Thread):
 
     def get_translate(self, url, save_to):
         '''
+        获取要爬取文章的翻译 （如果有的话）
+        :param url: 文章翻译的 url 地址
+        :param save_to: 文件储存路径
+        :return: None for succeed, -1 for failed
         '''
         if url is None:
             return -1
@@ -250,12 +281,17 @@ class ArticleSpider(Thread):
 
     def send_mp3_info(self, mp3_info_dict):
         '''
+        将 MP3 信息放入 MP3 队列
+        :param mp3_info_dict: 要放入的 MP3 信息
+        :return: None
         '''
         CONFIG.MP3_QUEUE.put(mp3_info_dict)
         pass
 
     def send_none(self):
         '''
+        将 None 放入 MP3 队列
+        :return: None
         '''
         for _ in range(CONFIG.SPIDER_NUM):
             CONFIG.MP3_QUEUE.put(None)
@@ -287,6 +323,7 @@ class ArticleSpider(Thread):
 
 class MP3Spider(Thread):
     '''
+    class MP3Spider, a subclass for Thread.
     '''
     def __init__(self):
         super().__init__()
@@ -301,6 +338,8 @@ class MP3Spider(Thread):
 
     def get_mp3_info(self):
         '''
+        从 MP3 管道里获取 MP3 信息
+        :return: None for break, 0 for continue, 1 for succeed
         '''
         mp3_info = CONFIG.MP3_QUEUE.get()
         if mp3_info is None:
@@ -318,6 +357,8 @@ class MP3Spider(Thread):
 
     def error_log(self):
         '''
+        记录异常日志
+        :return: None
         '''
         with open('./week 13/error.log', 'a+') as f:
             f.write('file : {},{},{},{} download error at time {} s!'.format(
@@ -328,6 +369,9 @@ class MP3Spider(Thread):
 
     def get_music(self, save_to):
         '''
+        将 MP3 文件保存到本地
+        :save_to: 文件要保存的路径
+        :return: None for succeed, -1 for error
         '''
         if self.curmp3url is None:
             self.error_log()
@@ -346,6 +390,9 @@ class MP3Spider(Thread):
 
     def get_lrc(self, save_to):
         '''
+        将对应字幕文件保存到本地
+        :save_to: 文件要保存的路径
+        :return: None for succeed, -1 for failed
         '''
         if self.curlrcurl is None:
             return -1
@@ -361,22 +408,30 @@ class MP3Spider(Thread):
 
     def send_mem_info(self):
         '''
+        向控制台线程发送信息
+        :return: None
         '''
         CONFIG.send_message(self.curmem)
         pass
 
     def send_none(self):
         '''
+        向控制台发送 None （结束的标志）
+        :return: None
         '''
         CONFIG.MESSAGE_QUEUE.put(None)
 
     def update_mp3_state(self):
         '''
+        更新 MP3 爬取进度
+        :return: None
         '''
         CONFIG.COMPLETE_MP3[self.curnum][self.curmp3num] = 0
 
     def write_md(self):
         '''
+        将音频和文章保存为 Markdown 文件
+        :return: None
         '''
         # 不想写了，要实现也不是不可以...累了累了
         pass
@@ -403,6 +458,7 @@ class MP3Spider(Thread):
 
 class SpiderMonitor(Thread):
     '''
+    class SpiderMonitor, a subclass for Thread.
     '''
     def __init__(self):
         super().__init__()
@@ -418,6 +474,7 @@ class SpiderMonitor(Thread):
     def cnf(self):
         '''
         cnf stand for caculate number of files
+        :return: None
         '''
         flag = 0
         for i in CONFIG.COMPLETE_LIST:
@@ -429,6 +486,7 @@ class SpiderMonitor(Thread):
     def cot(self):
         '''
         cot stand for continuous operation time
+        :return: None
         '''
         self.run_time = time.time() - CONFIG.START_TIME
         pass
@@ -436,6 +494,7 @@ class SpiderMonitor(Thread):
     def etc(self):
         '''
         etc stand for estimated time of completion
+        :return: None
         '''
         temp = self.num_of_files * self.run_time / self.cnt_num
         self.remain_time = temp - self.run_time
@@ -444,6 +503,7 @@ class SpiderMonitor(Thread):
     def emc(self):
         '''
         emc stand for estimated memory of completion
+        :return: None
         '''
         temp = self.num_of_files * self.cnt_mem / self.cnt_num
         self.remain_mem = temp - self.cnt_mem
@@ -451,6 +511,8 @@ class SpiderMonitor(Thread):
 
     def get_state(self):
         '''
+        获取当前爬虫进度状态。
+        :return: None for break, 0 for continue, -1 for succeed
         '''
         message = CONFIG.receive_message()
         if message is None:
@@ -483,6 +545,7 @@ class SpiderMonitor(Thread):
 
 class SpiderRecovery(Thread):
     '''
+    class SpiderRecovery, a subclass for Thread.
     '''
     def __init__(self):
         super().__init__()
@@ -491,6 +554,9 @@ class SpiderRecovery(Thread):
 
     def backup(self, path=r'./week 13/.log'):
         '''
+        备份爬虫进度
+        :param path: 备份文件路径
+        :return: None
         '''
         CONFIG.refresh_status()
         backup_dict = {
@@ -508,6 +574,9 @@ class SpiderRecovery(Thread):
     @staticmethod
     def recovery(path=r'./week 13/.log'):
         '''
+        恢复备份（断点续传）
+        :param path: 要恢复的备份路径
+        :return: None
         '''
         if not os.path.exists(path):
             raise LogFileNotFoundError('No such log file {} !'.format(path))
@@ -539,6 +608,7 @@ class SpiderRecovery(Thread):
 
 class Master:
     '''
+    class Master
     '''
     def __init__(self):
         self.MPS = None
@@ -579,6 +649,8 @@ class Master:
 
     def creat_all(self):
         '''
+        创建各个线程并启动
+        :return: None
         '''
         self._creat_MPS()
         self._creat_AS()
@@ -589,6 +661,8 @@ class Master:
 
     def join_all(self):
         '''
+        阻塞 Master 线程，等待所有线程结束后再继续
+        :return: None
         '''
         self.MPS.join()
         for i in self.AS_list:
