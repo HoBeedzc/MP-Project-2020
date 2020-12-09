@@ -19,10 +19,10 @@ class CONFIG:
     '''
     class CONFIG
     '''
-    TOTAL_PAGES = 29
+    TOTAL_PAGES = 21
     ROOT_DOMAIN = r'https://www.51voa.com'
     SUB_URL = r'/VOA_Special_English/'
-    MASTR_URL = r'https://www.51voa.com/Technology_Report_{}.html'
+    MASTR_URL = r'https://www.51voa.com/This_is_America_{}.html'
     HEAD = {
         'user-agent':
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36'
@@ -81,6 +81,8 @@ class CONFIG:
     @staticmethod
     def receive_message():
         '''
+        从信息队列中接受信息。 该队列仅供传输控制台信息使用
+        :return: None
         '''
         return CONFIG.MESSAGE_QUEUE.get()
 
