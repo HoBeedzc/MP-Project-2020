@@ -41,9 +41,9 @@ class UserDock(Thread):
 
     """
 
-    def __init__(self, name: str, conn, addr):
+    def __init__(self, conn, addr):
         super().__init__()
-        self._name = name
+        self._name = "client-" + addr[0] + "-" + str(addr[1])
         self._conn = conn
         self._addr = addr
         pass
@@ -51,6 +51,11 @@ class UserDock(Thread):
     @property
     def name(self):
         return self._name
+
+    @name.setter
+    def name(self, new_name):
+        self._name = new_name
+        pass
 
     @property
     def conn(self):
@@ -75,6 +80,20 @@ class UserDock(Thread):
         pass
 
     def run(self):
+        while True:
+            try:
+                data = conn.recv(CONFIG.RSIZE)
+                if not data:
+                    break
+                print('CLIENT: %s' % data.decode('utf-8'))
+                if data.decode('utf-8') == 'bye':
+                    conn.send('再见'.encode('utf-8'))
+                    break
+                else:
+                    conn.send('收到！'.encode('utf-8'))
+            except Exception as e:
+                print('SERVER ERROR: %s' % e)
+                break
         pass
 
 
@@ -136,15 +155,14 @@ class Manager:
                 i.conn.send(message.encode(CONFIG.CODE))
         pass
 
-    def access(self, name: str, conn: socket.socket, addr: tuple) -> None:
+    def access(self, conn: socket.socket, addr: tuple) -> None:
         """
 
-        :param name:
         :param conn:
         :param addr:
         :return:
         """
-        temp_user = UserDock(name, conn, addr)
+        temp_user = UserDock(conn, addr)
         temp_user.run()
         self.users.append(temp_user)
         self.broadcast('SYSTEM: {} joins group chat...'.format(temp_user.name))
@@ -158,6 +176,7 @@ class Manager:
         self.broadcast('SYSTEM: {} left the group chat...'.format(name))
         for i in range(len(self.users)):
             if self.users[i].name == name:
+                self.users[i].conn.close()
                 self.users[i].join()
                 del self.users[i]
         pass
@@ -173,22 +192,7 @@ class Manager:
         print('SYSTEM: SERVER is listening on %s' % self.port)
         while True:
             conn, addr = self.server.accept()
-            # TODO turn to UserDock
-            while True:
-                try:
-                    data = conn.recv(CONFIG.RSIZE)
-                    if not data:
-                        break
-                    print('CLIENT: %s' % data.decode('utf-8'))
-                    if data.decode('utf-8') == 'bye':
-                        conn.send('再见'.encode('utf-8'))
-                        break
-                    else:
-                        conn.send('收到！'.encode('utf-8'))
-                except Exception as e:
-                    print('SERVER ERROR: %s' % e)
-                    break
-            conn.close()
+            self.access(conn, addr)
         # TODO heartbeat
         self.server.close()
 
