@@ -133,7 +133,7 @@ dmypy.json
 Under_Protection/
 THUCN/
 .vscode
-pythonenv3.8
+pythonenv3.8/
 .idea/
 51voa/
 51voa_slow/
