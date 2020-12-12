@@ -20,7 +20,6 @@ class AutoShutDown(Thread):
     """
 
     """
-
     def __init__(self):
         super().__init__()
         pass
@@ -40,7 +39,6 @@ class UserDock(Thread):
     """
 
     """
-
     def __init__(self, conn, addr):
         super().__init__()
         self._name = "client-" + addr[0] + "-" + str(addr[1])
@@ -100,7 +98,6 @@ class UserDock(Thread):
 class Manager:
     """
     """
-
     def __init__(self, port, maxconn=5):
         self._port = port
         self._maxconn = maxconn
@@ -151,7 +148,9 @@ class Manager:
         print(message)
         for i in self.users:
             if i.name == to_:
-                i.conn.send('SYSTEM: {} @ you in group chat...'.format(from_).encode(CONFIG.CODE))
+                i.conn.send(
+                    'SYSTEM: {} @ you in group chat...'.format(from_).encode(
+                        CONFIG.CODE))
                 i.conn.send(message.encode(CONFIG.CODE))
         pass
 
@@ -201,7 +200,6 @@ class Master(Thread):
     """
 
     """
-
     def __init__(self):
         super().__init__()
         pass
