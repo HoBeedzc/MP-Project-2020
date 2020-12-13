@@ -1,3 +1,4 @@
+import sys
 import socket
 from threading import Thread
 
@@ -12,6 +13,8 @@ class CONFIG:
     """
     WELCOME = """\nWelcome to HoBeeChat alpha 0.0.1\nhttps://www.github.com/HoBeedzc\nHave fun!"""
     PORT = 7240
+    RSIZE = 1024
+    CODE = 'utf-8'
     IP = r'127.0.0.1'
 
     def __init__(self):
@@ -26,9 +29,36 @@ class Sender(Thread):
     def __init__(self, client: socket.socket):
         super().__init__()
         self.client = client
+        self.curmessage = None
+        pass
+
+    def get_message(self):
+        """
+
+        :return:
+        """
+        msg = ''
+        while msg == '':
+            msg = input('>>>:')
+        self.curmessage = msg
+        pass
+
+    def send(self):
+        """
+
+        :return:
+        """
+        data = self.curmessage.encoding(CONFIG.CODE)
+        self.client.send(data)
         pass
 
     def run(self):
+        while True:
+            self.get_message()
+            self.send()
+            if self.curmessage == '@exit':
+                break
+        print('The sender has stopped working...')
         pass
 
 
@@ -40,9 +70,33 @@ class Receiver(Thread):
     def __init__(self, client: socket.socket):
         super().__init__()
         self.client = client
+        self.curmessage = None
+        pass
+
+    def recv(self):
+        """
+
+        :return:
+        """
+        data = self.client.recv(CONFIG.RSIZE)
+        self.curmessage = data.decode(CONFIG.CODE)
+        pass
+
+    def show(self):
+        """
+
+        :return:
+        """
+        print(self.curmessage)
         pass
 
     def run(self):
+        while True:
+            self.recv()
+            self.show()
+            if self.curmessage == 'bye':
+                break
+        print('The receiver has stopped working...')
         pass
 
 
@@ -99,13 +153,22 @@ class Chatter:
         """
         self.client.connect((self.ip, self.port))
         self.deliver()
+        print('Client will exit in 0 second.')
         self.client.close()
         pass
 
 
 def main():
-    print(CONFIG.WELCOME)
-    print('start')
+    try:
+        ip = sys.argv[1]
+    except AttributeError:
+        ip = CONFIG.IP
+    try:
+        port = sys.argv[2]
+    except AttributeError:
+        port = CONFIG.PORT
+    one_client = Chatter(ip,port)
+    one_client.start()
     pass
 
 
