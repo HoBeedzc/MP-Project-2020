@@ -9,29 +9,41 @@ class CONFIG:
     """
 
     """
-    HOST = 7240
+    PORT = 7240
+    HOST = r'127.0.0.1'
     RSIZE = 1024
     CODE = 'utf-8'
+    WAITTIME = 60
     MAEEAGE_QUEUE = queue.Queue()
-    
+    HELP = '''Tips for HoBeeChat...'''
 
     def __init__(self):
         pass
-
 
 class AutoShutDown(Thread):
     """
 
     """
+
     def __init__(self):
         super().__init__()
+        self._flag = True
         pass
+
+    @property
+    def flag(self):
+        return self._flag
+
+    @flag.setter
+    def flag(self,new_flag:bool):
+        self._flag = new_flag
 
     def heartbeat(self):
         """
 
         :return:
         """
+        time.sleep(CONFIG.WAITTIME)
         pass
 
     def run(self):
@@ -42,6 +54,7 @@ class UserDock(Thread):
     """
 
     """
+
     def __init__(self, conn, addr):
         super().__init__()
         self._name = "client-" + addr[0] + "-" + str(addr[1])
@@ -88,9 +101,37 @@ class UserDock(Thread):
         """
         data = self.curdata
         if data == 'bye':
-            self.send('再见'.encode('utf-8'))
+            self.send('再见')
+        elif data[0] == '@':  # 交互式指令
+            data_list = data.split()
+            if data_list[0] == '@help':
+                self.send(CONFIG.HELP)
+            elif data_list[0] == '@name':
+                try:
+                    self.name = data_list[1]
+                    self.send('SYSTEM: Successfully change name to {}...'.format(self.name))
+                except AttributeError:
+                    self.send('SYSTEM: Name change failed! Please try again.')
+            elif data_list[0] == '@exit':
+                self.send('SYSTEM: Goodbye.')
+            elif data_list[0] == '@check_in':
+                self.send('SYSTEM: Check in successfully!')
+            elif data_list[0] == '@all':
+                # TODO send all message
+                all_message = data_list[1]
+                self.send('SYSTEM: Successfully send a meaasge to everyone!')
+            elif data_list[0] == '@important':
+                # TODO send important message
+                im_message = data_list[1]
+                self.send('SYSTEM: Successfully send an important message to everyone!')
+            else:
+                to_name = data_list[0][1:]
+                to_message = data_list[1]
+                self.send('SYSTEM: Successfully send a message to {} '.format(to_name))
+                # TODO send_message
         else:
-            self.send('SYSTEM: receive message successfully!')
+            # TODO send  message
+            self.send('SYSTEM: Successfully send a message to group chat!')
         pass
 
     def run(self):
@@ -104,14 +145,30 @@ class UserDock(Thread):
         pass
 
 
+class Master(Thread):
+    """
+
+    """
+
+    def __init__(self):
+        super().__init__()
+        pass
+
+    def run(self):
+        pass
+
+
 class Manager:
     """
     """
-    def __init__(self, port, maxconn=5):
+
+    def __init__(self,host, port, maxconn=5):
         self._port = port
+        self._host = host
         self._maxconn = maxconn
         self._server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._users = []
+        self.curuser = 0
         pass
 
     @property
@@ -121,6 +178,10 @@ class Manager:
     @property
     def port(self):
         return self._port
+
+    @property
+    def host(self):
+        return self._host
 
     @property
     def maxconn(self):
@@ -142,7 +203,7 @@ class Manager:
         for i in self.users:
             if i.name == user:
                 continue
-            i.send(message.encode(CONFIG.CODE))
+            i.send(message)
         pass
 
     def mention(self, from_: UserDock.name, to_: UserDock.name, message: str):
@@ -157,10 +218,8 @@ class Manager:
         print(message)
         for i in self.users:
             if i.name == to_:
-                i.send(
-                    'SYSTEM: {} @ you in group chat...'.format(from_).encode(
-                        CONFIG.CODE))
-                i.send(message.encode(CONFIG.CODE))
+                i.send('SYSTEM: {} @ you in group chat...'.format(from_))
+                i.send(message)
         pass
 
     def access(self, conn: socket.socket, addr: tuple) -> None:
@@ -173,6 +232,7 @@ class Manager:
         temp_user = UserDock(conn, addr)
         temp_user.run()
         self.users.append(temp_user)
+        self.curuser += 1
         self.broadcast('SYSTEM: {} joins group chat...'.format(temp_user.name))
         pass
 
@@ -187,6 +247,7 @@ class Manager:
                 self.users[i].conn.close()
                 self.users[i].join()
                 del self.users[i]
+        self.curuser -= 1
         pass
 
     def start(self):
@@ -195,7 +256,7 @@ class Manager:
         :return:
         """
         self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.server.bind((CONFIG.HOST, self.port))
+        self.server.bind((self.host, self.port))
         self.server.listen(self.maxconn)
         print('SYSTEM: SERVER is listening on %s' % self.port)
         while True:
@@ -203,18 +264,6 @@ class Manager:
             self.access(conn, addr)
         # TODO heartbeat
         self.server.close()
-
-
-class Master(Thread):
-    """
-
-    """
-    def __init__(self):
-        super().__init__()
-        pass
-
-    def run(self):
-        pass
 
 
 def main():
