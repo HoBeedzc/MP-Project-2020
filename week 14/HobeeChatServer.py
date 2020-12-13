@@ -246,6 +246,9 @@ class Master(Thread):
     def users(self):
         return self._users
 
+    def curuser(self):
+        return len(self.users)
+
     def broadcast(self, user: UserDock.name, message):
         """
 
@@ -284,7 +287,10 @@ class Master(Thread):
         """
         msg = CONFIG.MESSAGE_QUEUE.get()
         if msg is None:
-            return -1
+            if self.curuser() == 1:
+                return -1
+            else:
+                return 1
         self.curmessage = msg
         pass
 
@@ -300,6 +306,9 @@ class Master(Thread):
 
         :return:
         """
+        with open('.log', 'a+') as f:
+            f.write(self.curmessage)
+            f.write('\n')
         pass
 
     def run(self):
@@ -307,6 +316,8 @@ class Master(Thread):
             flag = self.get()
             if flag == -1:
                 break
+            elif flag == 1:
+                continue
             self.process()
             self.log()
         pass
