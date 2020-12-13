@@ -1,5 +1,6 @@
 import sys
 import socket
+import time
 from threading import Thread
 
 
@@ -19,6 +20,15 @@ class CONFIG:
 
     def __init__(self):
         pass
+
+    @staticmethod
+    def time():
+        """
+
+        :return:
+        """
+        now_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+        return now_time
 
 
 class Sender(Thread):
@@ -87,6 +97,7 @@ class Receiver(Thread):
 
         :return:
         """
+        print(CONFIG.time(), end=' -> ')
         print(self.curmessage)
         pass
 
@@ -167,7 +178,7 @@ def main():
         port = sys.argv[2]
     except AttributeError:
         port = CONFIG.PORT
-    one_client = Chatter(ip,port)
+    one_client = Chatter(ip, port)
     one_client.start()
     pass
 

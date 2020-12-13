@@ -20,6 +20,16 @@ class CONFIG:
     def __init__(self):
         pass
 
+    @staticmethod
+    def time():
+        """
+
+        :return:
+        """
+        now_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+        return now_time
+
+
 class AutoShutDown(Thread):
     """
 
@@ -35,7 +45,7 @@ class AutoShutDown(Thread):
         return self._flag
 
     @flag.setter
-    def flag(self,new_flag:bool):
+    def flag(self, new_flag: bool):
         self._flag = new_flag
 
     def heartbeat(self):
@@ -162,7 +172,7 @@ class Manager:
     """
     """
 
-    def __init__(self,host, port, maxconn=5):
+    def __init__(self, host, port, maxconn=5):
         self._port = port
         self._host = host
         self._maxconn = maxconn
