@@ -1,5 +1,6 @@
 import socket
 from threading import Thread
+import queue
 import re
 import time
 
@@ -11,6 +12,8 @@ class CONFIG:
     HOST = 7240
     RSIZE = 1024
     CODE = 'utf-8'
+    MAEEAGE_QUEUE = queue.Queue()
+    
 
     def __init__(self):
         pass
@@ -44,6 +47,7 @@ class UserDock(Thread):
         self._name = "client-" + addr[0] + "-" + str(addr[1])
         self._conn = conn
         self._addr = addr
+        self.curdata = None
         pass
 
     @property
@@ -63,11 +67,12 @@ class UserDock(Thread):
     def addr(self):
         return self._addr
 
-    def send(self):
+    def send(self, message):
         """
 
         :return:
         """
+        self.conn.send(message.encode(CONFIG.CODE))
         pass
 
     def receive(self):
@@ -75,22 +80,26 @@ class UserDock(Thread):
 
         :return:
         """
+        self.curdata = self.conn.recv(CONFIG.RSIZE).decode(CONFIG.CODE)
+        pass
+
+    def process(self):
+        """
+        """
+        data = self.curdata
+        if data == 'bye':
+            self.send('再见'.encode('utf-8'))
+        else:
+            self.send('SYSTEM: receive message successfully!')
         pass
 
     def run(self):
         while True:
             try:
-                data = conn.recv(CONFIG.RSIZE)
-                if not data:
-                    break
-                print('CLIENT: %s' % data.decode('utf-8'))
-                if data.decode('utf-8') == 'bye':
-                    conn.send('再见'.encode('utf-8'))
-                    break
-                else:
-                    conn.send('收到！'.encode('utf-8'))
+                self.receive()
+                self.process()
             except Exception as e:
-                print('SERVER ERROR: %s' % e)
+                print('SYSTEM: SERVER ERROR: %s' % e)
                 break
         pass
 
@@ -133,7 +142,7 @@ class Manager:
         for i in self.users:
             if i.name == user:
                 continue
-            i.conn.send(message.encode(CONFIG.CODE))
+            i.send(message.encode(CONFIG.CODE))
         pass
 
     def mention(self, from_: UserDock.name, to_: UserDock.name, message: str):
@@ -148,10 +157,10 @@ class Manager:
         print(message)
         for i in self.users:
             if i.name == to_:
-                i.conn.send(
+                i.send(
                     'SYSTEM: {} @ you in group chat...'.format(from_).encode(
                         CONFIG.CODE))
-                i.conn.send(message.encode(CONFIG.CODE))
+                i.send(message.encode(CONFIG.CODE))
         pass
 
     def access(self, conn: socket.socket, addr: tuple) -> None:
