@@ -105,7 +105,7 @@ class Receiver(Thread):
         while True:
             self.recv()
             self.show()
-            if self.curmessage == 'bye':
+            if self.curmessage == 'SYSTEM: Goodbye.':
                 break
         print('The receiver has stopped working...')
         pass
