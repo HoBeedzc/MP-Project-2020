@@ -2,6 +2,7 @@ import socket
 from threading import Thread
 import queue
 import re
+import sys
 import time
 
 
@@ -188,11 +189,13 @@ class UserDock(Thread):
         if data == 'bye':
             self.send('SYSTEM: send @exit to exit.')
             self.put(Message(self.curdata, 'ordinary', 'message', self.name))
+            pass
         elif data[0] == '@':  # 交互式指令
             data_list = data.split()
             if data_list[0] == '@help':
                 self.send(CONFIG.HELP)
                 self.put(Message(self.curdata, 'option', 'help', self.name))
+                pass
             elif data_list[0] == '@name':
                 try:
                     self.name = data_list[1]
@@ -201,30 +204,36 @@ class UserDock(Thread):
                 except AttributeError:
                     self.send('SYSTEM: Name change failed! Please try again.')
                     self.put(Message(self.curdata, 'option', 'failname', self.name))
+                pass
             elif data_list[0] == '@exit':
                 self.send('SYSTEM: Goodbye.')
                 self.put(Message(self.curdata, 'option', 'exit', self.name))
                 self.put_none()
+                pass
             elif data_list[0] == '@check_in':
                 self.send('SYSTEM: Check in successfully!')
                 self.put(Message(self.curdata, 'option', 'checkin', self.name))
+                pass
             elif data_list[0] == '@all':
                 all_message = data_list[1]
                 self.send('SYSTEM: Successfully send a message to everyone!')
                 self.put(Message(all_message, 'ordinary', 'all', self.name))
+                pass
             elif data_list[0] == '@important':
                 im_message = data_list[1]
                 self.send('SYSTEM: Successfully send an important message to everyone!')
-                for _ in range(3):
-                    self.put(Message(im_message, 'ordinary', 'important', self.name))
+                self.put(Message(im_message, 'ordinary', 'important', self.name))
+                pass
             else:
                 to_name = data_list[0][1:]
                 to_message = data_list[1]
                 self.send('SYSTEM: Successfully send a message to {} '.format(to_name))
                 self.put(Message(to_message, 'ordinary', 'mention', self.name, to_name))
+                pass
         else:
             self.send('SYSTEM: Successfully send a message to group chat!')
             self.put(Message(self.curdata, 'ordinary', 'message', self.name))
+            pass
         pass
 
     def run(self):
@@ -246,10 +255,11 @@ class Master(Thread):
 
     """
 
-    def __init__(self, server: socket.socket):
+    def __init__(self, server: socket.socket, manager):
         super().__init__()
         self._server = server
         self._users = []
+        self._manager = manager
         self.curmessage = None
         pass
 
@@ -260,6 +270,10 @@ class Master(Thread):
     @property
     def users(self):
         return self._users
+
+    @property
+    def manager(self):
+        return self._manager
 
     def curuser(self):
         return len(self.users)
@@ -322,35 +336,54 @@ class Master(Thread):
         time_ = self.curmessage.time
         if type_ == 'option':
             if subtype == 'name':
+                self.log('{} -> {} changed name successfully.'.format(time_, from_))
                 pass
             elif subtype == 'failname':
+                self.log('{} -> {} failed to change name.'.format(time_, from_))
                 pass
             elif subtype == 'help':
+                self.log('{} -> {} viewed help documents.'.format(time_, from_))
                 pass
             elif subtype == 'exit':
+                self.log('{} -> {} left the group chat...'.format(time_, from_))
+                self.manager.suspend(from_)
                 pass
             elif subtype == 'checkin':
+                self.log('{} -> {} checked in...'.format(time_, from_))
                 pass
             else:
+                self.log('{} -> {} send an invalid option message subtype: {}'.format(time_, from_, subtype))
                 pass
             pass
         elif type_ == 'ordinary':
             if subtype == 'all':
+                self.log('{} -> {} send a message to everyone : {}'.format(time_, from_, content))
+                for i in self.users:
+                    self.mention(from_, i.name, content)
                 pass
             elif subtype == 'important':
+                self.log('{} -> {} send an important message to group chat : {}'.format(time_, from_, content))
+                for _ in range(3):
+                    self.broadcast(from_, content)
                 pass
             elif subtype == 'mention':
+                self.log('{} -> {} send a message to {} : {}'.format(time_, from_, to_, content))
+                self.mention(from_, to_, content)
                 pass
             elif subtype == 'message':
+                self.log('{} -> {} send a message to group chat : {}'.format(time_, from_, content))
+                self.broadcast(from_, content)
                 pass
             else:
+                self.log('{} -> {} send an invalid ordinary message subtype: {}'.format(time_, from_, subtype))
                 pass
             pass
         else:
+            self.log('{} -> {} send an invalid message type: {}'.format(time_, from_, type_))
             pass
         pass
 
-    def log(self,message):
+    def log(self, message):
         """
 
         :return:
@@ -369,7 +402,6 @@ class Master(Thread):
             elif flag == 1:
                 continue
             self.process()
-            self.log()
         pass
 
 
@@ -437,7 +469,7 @@ class Manager:
 
         :return:
         """
-        self.master = Master(self.server)
+        self.master = Master(self.server, self)
         self.master.start()
         pass
 
@@ -448,10 +480,15 @@ class Manager:
         :param addr:
         :return:
         """
+        print(1)
         temp_user = UserDock(conn, addr)
+        print(2)
         temp_user.run()
+        print(3)
         self.master.users.append(temp_user)
+        print(4)
         self.master.broadcast('SYSTEM: {} joins group chat...'.format(temp_user.name))
+        print('SYSTEM: {} joins group chat...'.format(temp_user.name))
         self.curuser += 1
         if self.curuser == 1:
             print('SYSTEM: Client access, timer will be suspended...')
@@ -486,6 +523,7 @@ class Manager:
         self.server.bind((self.host, self.port))
         self.server.listen(self.maxconn)
         print('SYSTEM: SERVER is listening on %s' % self.port)
+        self.deliver()
         while True:
             conn, addr = self.server.accept()
             self.access(conn, addr)
@@ -493,8 +531,20 @@ class Manager:
 
 
 def main():
+    try:
+        host = sys.argv[1]
+    except IndexError:
+        host = CONFIG.HOST
+    try:
+        port = sys.argv[2]
+        port = int(port)
+    except IndexError:
+        port = CONFIG.PORT
+    one_server = Manager(host, port)
+    one_server.start()
     pass
 
 
 if __name__ == '__main__':
+    main()
     pass

@@ -173,12 +173,12 @@ class Chatter:
 def main():
     try:
         ip = sys.argv[1]
-    except AttributeError:
+    except IndexError:
         ip = CONFIG.IP
     try:
         port = sys.argv[2]
         port = int(port)
-    except AttributeError:
+    except IndexError:
         port = CONFIG.PORT
     one_client = Chatter(ip, port)
     one_client.start()
