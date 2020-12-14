@@ -35,14 +35,13 @@ class Sender(Thread):
     """
 
     """
-
     def __init__(self, client: socket.socket):
         super().__init__()
         self.client = client
         self.curmessage = None
         pass
 
-    def get_message(self,delay = 0.1):
+    def get_message(self, delay=0.1):
         """
 
         :return:
@@ -77,7 +76,6 @@ class Receiver(Thread):
     """
 
     """
-
     def __init__(self, client: socket.socket):
         super().__init__()
         self.client = client
@@ -116,7 +114,6 @@ class Master(Thread):
     """
 
     """
-
     def __init__(self):
         super().__init__()
         pass
@@ -125,7 +122,6 @@ class Master(Thread):
 class Chatter:
     """
     """
-
     def __init__(self, ip, port):
         self._client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._ip = ip
