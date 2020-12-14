@@ -42,11 +42,12 @@ class Sender(Thread):
         self.curmessage = None
         pass
 
-    def get_message(self):
+    def get_message(self,delay = 0.1):
         """
 
         :return:
         """
+        time.sleep(delay)
         msg = ''
         while msg == '':
             msg = input('>>>:')
@@ -58,7 +59,7 @@ class Sender(Thread):
 
         :return:
         """
-        data = self.curmessage.encoding(CONFIG.CODE)
+        data = self.curmessage.encode(CONFIG.CODE)
         self.client.send(data)
         pass
 
@@ -176,6 +177,7 @@ def main():
         ip = CONFIG.IP
     try:
         port = sys.argv[2]
+        port = int(port)
     except AttributeError:
         port = CONFIG.PORT
     one_client = Chatter(ip, port)

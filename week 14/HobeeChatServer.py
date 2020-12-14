@@ -35,8 +35,9 @@ class Message:
 
     """
 
-    def __init__(self, content, type_, from_, to_=None):
+    def __init__(self, content, type_, subtype, from_, to_=None):
         self._type = type_
+        self._subtype = subtype
         self._from = from_
         self._to = to_
         self._content = content
@@ -45,6 +46,10 @@ class Message:
     @property
     def type_(self):
         return self._type
+
+    @property
+    def subtype(self):
+        return self._subtype
 
     @property
     def from_(self):
@@ -167,49 +172,59 @@ class UserDock(Thread):
         CONFIG.MESSAGE_QUEUE.put(message)
         pass
 
+    @staticmethod
+    def put_none():
+        """
+
+        :return:
+        """
+        CONFIG.MESSAGE_QUEUE.put(None)
+        pass
+
     def process(self):
         """
         """
         data = self.curdata
         if data == 'bye':
             self.send('SYSTEM: send @exit to exit.')
-            self.put(Message(self.curdata, 'ordinary', self.name))
+            self.put(Message(self.curdata, 'ordinary', 'message', self.name))
         elif data[0] == '@':  # 交互式指令
             data_list = data.split()
             if data_list[0] == '@help':
                 self.send(CONFIG.HELP)
-                self.put(Message(self.curdata, 'option', self.name))
+                self.put(Message(self.curdata, 'option', 'help', self.name))
             elif data_list[0] == '@name':
                 try:
                     self.name = data_list[1]
                     self.send('SYSTEM: Successfully change name to {}...'.format(self.name))
-                    self.put(Message(self.curdata, 'option', self.name))
+                    self.put(Message(self.curdata, 'option', 'name', self.name))
                 except AttributeError:
                     self.send('SYSTEM: Name change failed! Please try again.')
-                    self.put(Message(self.curdata, 'option', self.name))
+                    self.put(Message(self.curdata, 'option', 'failname', self.name))
             elif data_list[0] == '@exit':
                 self.send('SYSTEM: Goodbye.')
-                self.put(Message(self.curdata, 'option', self.name))
+                self.put(Message(self.curdata, 'option', 'exit', self.name))
+                self.put_none()
             elif data_list[0] == '@check_in':
                 self.send('SYSTEM: Check in successfully!')
-                self.put(Message(self.curdata, 'option', self.name))
+                self.put(Message(self.curdata, 'option', 'checkin', self.name))
             elif data_list[0] == '@all':
                 all_message = data_list[1]
                 self.send('SYSTEM: Successfully send a message to everyone!')
-                self.put(Message(all_message, 'all', self.name))
+                self.put(Message(all_message, 'ordinary', 'all', self.name))
             elif data_list[0] == '@important':
                 im_message = data_list[1]
                 self.send('SYSTEM: Successfully send an important message to everyone!')
                 for _ in range(3):
-                    self.put(Message(im_message, 'important', self.name))
+                    self.put(Message(im_message, 'ordinary', 'important', self.name))
             else:
                 to_name = data_list[0][1:]
                 to_message = data_list[1]
                 self.send('SYSTEM: Successfully send a message to {} '.format(to_name))
-                self.put(Message(to_message, 'mention', self.name, to_name))
+                self.put(Message(to_message, 'ordinary', 'mention', self.name, to_name))
         else:
             self.send('SYSTEM: Successfully send a message to group chat!')
-            self.put(Message(self.curdata, 'ordinary', self.name))
+            self.put(Message(self.curdata, 'ordinary', 'message', self.name))
         pass
 
     def run(self):
@@ -218,11 +233,11 @@ class UserDock(Thread):
                 self.receive()
                 self.process()
             except Exception as e:
-                print('SYSTEM: SERVER ERROR: %s' % e)
-                print('SYSTEM: The connection will close in 1 second...')
+                self.send('SYSTEM: SERVER ERROR: %s' % e)
+                self.send('SYSTEM: The connection will close in 0 second...')
                 break
         self.put(Message('@exit', 'option', self.name))
-        # TODO 在最后一条message发送完成之后再发一个None
+        self.put_none()
         pass
 
 
@@ -299,15 +314,50 @@ class Master(Thread):
 
         :return:
         """
+        type_ = self.curmessage.type_
+        subtype = self.curmessage.subtype
+        from_ = self.curmessage.from_
+        to_ = self.curmessage.to_
+        content = self.curmessage.content
+        time_ = self.curmessage.time
+        if type_ == 'option':
+            if subtype == 'name':
+                pass
+            elif subtype == 'failname':
+                pass
+            elif subtype == 'help':
+                pass
+            elif subtype == 'exit':
+                pass
+            elif subtype == 'checkin':
+                pass
+            else:
+                pass
+            pass
+        elif type_ == 'ordinary':
+            if subtype == 'all':
+                pass
+            elif subtype == 'important':
+                pass
+            elif subtype == 'mention':
+                pass
+            elif subtype == 'message':
+                pass
+            else:
+                pass
+            pass
+        else:
+            pass
         pass
 
-    def log(self):
+    def log(self,message):
         """
 
         :return:
         """
+        print(message)
         with open('.log', 'a+') as f:
-            f.write(self.curmessage)
+            f.write(message)
             f.write('\n')
         pass
 
