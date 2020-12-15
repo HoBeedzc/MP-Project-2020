@@ -49,7 +49,8 @@ class Sender(Thread):
         time.sleep(delay)
         msg = ''
         while msg == '':
-            msg = input('>>>:')
+            print('\r>>>:', end='', flush=True)
+            msg = input()
         self.curmessage = msg
         pass
 
@@ -96,15 +97,20 @@ class Receiver(Thread):
 
         :return:
         """
-        print(CONFIG.time(), end=' -> ')
-        print(self.curmessage)
+        print('\r', end='')
+        print('[{}]'.format(CONFIG.time()) + self.curmessage)
+        print('>>>:', end='', flush=True)
         pass
 
     def run(self):
         while True:
-            self.recv()
+            try:
+                self.recv()
+            except ConnectionResetError:
+                print('The receiver closed by Server...')
+                break
             self.show()
-            if self.curmessage == 'SYSTEM: Goodbye.':
+            if self.curmessage == '[SYSTEM]Goodbye.':
                 break
         print('The receiver has stopped working...')
         pass
@@ -159,6 +165,8 @@ class Chatter:
 
         :return:
         """
+        print(CONFIG.WELCOME)
+        print('>>>:', end='')
         self.client.connect((self.ip, self.port))
         self.deliver()
         print('Client will exit in 0 second.')

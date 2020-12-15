@@ -1,9 +1,21 @@
 import socket
-from threading import Thread
+from threading import Thread, active_count
 import queue
 import re
 import sys
 import time
+from functools import wraps
+
+
+def show_run_state(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        print('Creat a Thread {}'.format(args[0].__class__))
+        fun_res = func(*args, **kwargs)
+        print('Delete a Thread {}'.format(args[0].__class__))
+        return fun_res
+
+    return wrapper
 
 
 class CONFIG:
@@ -14,7 +26,7 @@ class CONFIG:
     HOST = r'127.0.0.1'
     RSIZE = 1024
     CODE = 'utf-8'
-    WAITTIME = 60
+    WAITTIME = 1
     MESSAGE_QUEUE = queue.Queue()
     HELP = '''Tips for HoBeeChat...'''
 
@@ -98,6 +110,7 @@ class AutoShutDown(Thread):
         time.sleep(CONFIG.WAITTIME)
         pass
 
+    # @show_run_state
     def run(self):
         self.heartbeat()
         if self.flag:
@@ -184,7 +197,7 @@ class UserDock(Thread):
         """
         data = self.curdata
         if data == 'bye':
-            self.send('SYSTEM: send @exit to exit.')
+            self.send('[SYSTEM]send @exit to exit.')
             self.put(Message(self.curdata, 'ordinary', 'message', self.name))
             pass
         elif data[0] == '@':  # 交互式指令
@@ -197,63 +210,67 @@ class UserDock(Thread):
                 try:
                     self.name = data_list[1]
                     self.send(
-                        'SYSTEM: Successfully change name to {}...'.format(
+                        '[SYSTEM]Successfully change name to {}...'.format(
                             self.name))
                     self.put(Message(self.curdata, 'option', 'name',
                                      self.name))
-                except AttributeError:
-                    self.send('SYSTEM: Name change failed! Please try again.')
+                except IndexError:
+                    self.send('[SYSTEM]Name change failed! Please try again.')
                     self.put(
                         Message(self.curdata, 'option', 'failname', self.name))
                 pass
             elif data_list[0] == '@exit':
-                self.send('SYSTEM: Goodbye.')
+                self.send('[SYSTEM]Goodbye.')
                 self.put(Message(self.curdata, 'option', 'exit', self.name))
                 self.put_none()
-                pass
+                return -1
             elif data_list[0] == '@check_in':
-                self.send('SYSTEM: Check in successfully!')
+                self.send('[SYSTEM]Check in successfully!')
                 self.put(Message(self.curdata, 'option', 'checkin', self.name))
                 pass
             elif data_list[0] == '@all':
                 all_message = data_list[1]
-                self.send('SYSTEM: Successfully send a message to everyone!')
+                self.send('[SYSTEM]Successfully send a message to everyone!')
                 self.put(Message(all_message, 'ordinary', 'all', self.name))
                 pass
             elif data_list[0] == '@important':
                 im_message = data_list[1]
                 self.send(
-                    'SYSTEM: Successfully send an important message to everyone!'
+                    '[SYSTEM]Successfully send an important message to everyone!'
                 )
                 self.put(
                     Message(im_message, 'ordinary', 'important', self.name))
                 pass
             else:
                 to_name = data_list[0][1:]
-                to_message = data_list[1]
-                self.send('SYSTEM: Successfully send a message to {} '.format(
-                    to_name))
+                try:
+                    to_message = data_list[1]
+                except IndexError:
+                    to_message = ''
                 self.put(
                     Message(to_message, 'ordinary', 'mention', self.name,
                             to_name))
                 pass
         else:
-            self.send('SYSTEM: Successfully send a message to group chat!')
+            self.send('[SYSTEM]Successfully send a message to group chat!')
             self.put(Message(self.curdata, 'ordinary', 'message', self.name))
             pass
         pass
 
+    # @show_run_state
     def run(self):
         while True:
             try:
                 self.receive()
-                self.process()
+                flag = self.process()
+                if flag == -1:
+                    break
             except Exception as e:
-                self.send('SYSTEM: SERVER ERROR: %s' % e)
-                self.send('SYSTEM: The connection will close in 0 second...')
+                self.send('[SYSTEM]SERVER ERROR: %s' % e)
+                self.send('[SYSTEM]The connection will close in 0 second...')
+                self.put(Message('@exit', 'option', 'exit', self.name))
+                self.put_none()
                 break
-        self.put(Message('@exit', 'option', 'exit', self.name))
-        self.put_none()
         pass
 
 
@@ -291,8 +308,7 @@ class Master(Thread):
         :param message:
         :return:
         """
-        message = '{}: '.format(user) + message
-        print(message)
+        message = '[{}]'.format(user) + message
         for i in self.users:
             if i.name == user:
                 continue
@@ -307,12 +323,21 @@ class Master(Thread):
         :param message:
         :return:
         """
-        message = '{}: '.format(from_) + message
-        print(message)
+        flag = 1
+        message = '[{}]'.format(from_) + message
         for i in self.users:
             if i.name == to_:
-                i.send('SYSTEM: {} @ you in group chat...'.format(from_))
+                flag = 0
+                i.send('[SYSTEM]{} @ you in group chat...'.format(from_))
                 i.send(message)
+        if flag:
+            re_msg = '[SYSTEM]No such user named {}! Please check your input!'.format(
+                to_)
+        else:
+            re_msg = '[SYSTEM]Successfully send a message to {} '.format(to_)
+        for i in self.users:
+            if i.name == from_:
+                i.send(re_msg)
         pass
 
     def get(self):
@@ -322,7 +347,7 @@ class Master(Thread):
         """
         msg = CONFIG.MESSAGE_QUEUE.get()
         if msg is None:
-            if self.curuser() == 1:
+            if self.curuser() == 0:
                 return -1
             else:
                 return 1
@@ -342,67 +367,68 @@ class Master(Thread):
         time_ = self.curmessage.time
         if type_ == 'option':
             if subtype == 'name':
-                self.log('{} -> {} changed name successfully.'.format(
+                self.log('[{}][{}] changed name successfully.'.format(
                     time_, from_))
                 pass
             elif subtype == 'failname':
-                self.log('{} -> {} failed to change name.'.format(
+                self.log('[{}][{}] failed to change name.'.format(
                     time_, from_))
                 pass
             elif subtype == 'help':
-                self.log('{} -> {} viewed help documents.'.format(
+                self.log('[{}][{}] viewed help documents.'.format(
                     time_, from_))
                 pass
             elif subtype == 'exit':
-                self.log('{} -> {} left the group chat...'.format(
+                self.log('[{}][{}] left the group chat...'.format(
                     time_, from_))
                 self.manager.suspend(from_)
                 pass
             elif subtype == 'checkin':
-                self.log('{} -> {} checked in...'.format(time_, from_))
+                self.log('[{}][{}] checked in...'.format(time_, from_))
                 pass
             else:
-                self.log('{} -> {} send an invalid option message subtype: {}'.
+                self.log('[{}][{}] send an invalid option message subtype: {}'.
                          format(time_, from_, subtype))
                 pass
             pass
         elif type_ == 'ordinary':
             if subtype == 'all':
-                self.log('{} -> {} send a message to everyone : {}'.format(
+                self.log('[{}][{}] send a message to everyone : {}'.format(
                     time_, from_, content))
                 for i in self.users:
                     self.mention(from_, i.name, content)
                 pass
             elif subtype == 'important':
                 self.log(
-                    '{} -> {} send an important message to group chat : {}'.
+                    '[{}][{}] send an important message to group chat : {}'.
                     format(time_, from_, content))
                 for _ in range(3):
                     self.broadcast(from_, content)
                 pass
             elif subtype == 'mention':
-                self.log('{} -> {} send a message to {} : {}'.format(
+                self.log('[{}][{}] send a message to {} : {}'.format(
                     time_, from_, to_, content))
                 self.mention(from_, to_, content)
                 pass
             elif subtype == 'message':
-                self.log('{} -> {} send a message to group chat : {}'.format(
+                self.log('[{}][{}] send a message to group chat : {}'.format(
                     time_, from_, content))
                 self.broadcast(from_, content)
                 pass
             else:
                 self.log(
-                    '{} -> {} send an invalid ordinary message subtype: {}'.
+                    '[{}][{}] send an invalid ordinary message subtype: {}'.
                     format(time_, from_, subtype))
                 pass
             pass
         else:
-            self.log('{} -> {} send an invalid message type: {}'.format(
+            self.log('[{}][{}] send an invalid message type: {}'.format(
                 time_, from_, type_))
             pass
         pass
 
-    def log(self, message):
+    @staticmethod
+    def log(message):
         """
 
         :return:
@@ -413,6 +439,7 @@ class Master(Thread):
             f.write('\n')
         pass
 
+    # @show_run_state
     def run(self):
         while True:
             flag = self.get()
@@ -482,6 +509,19 @@ class Manager:
     def curuser(self, new_cur):
         self._curuser = new_cur
 
+    @staticmethod
+    def log(message):
+        """
+
+        :return:
+        """
+        message = '[{}]'.format(CONFIG.time()) + message
+        print(message)
+        with open('.log', 'a+') as f:
+            f.write(message)
+            f.write('\n')
+        pass
+
     def deliver(self):
         """
 
@@ -503,14 +543,14 @@ class Manager:
         self.master.users.append(temp_user)
         self.master.broadcast(
             temp_user.name,
-            'SYSTEM: {} joins group chat...'.format(temp_user.name))
-        print('SYSTEM: {} joins group chat...'.format(temp_user.name))
+            '[SYSTEM]{} joins group chat1...'.format(temp_user.name))
+        self.log('[SYSTEM]{} joins group chat...'.format(temp_user.name))
         self.curuser += 1
         if self.curuser == 1:
             if self.timer is None:
                 pass
             else:
-                print('SYSTEM: Client access, timer will be suspended...')
+                print('[SYSTEM]Client access, timer will be suspended...')
                 self.timer.flag = False
                 del self.timer
                 self.deliver()
@@ -521,16 +561,18 @@ class Manager:
 
         :return:
         """
-        self.master.broadcast('SYSTEM: {} left the group chat...'.format(name))
+        self.master.broadcast(name,
+                              '[SYSTEM]{} left the group chat...'.format(name))
         for i in range(len(self.master.users)):
             if self.master.users[i].name == name:
                 self.master.users[i].conn.close()
                 self.master.users[i].join()
                 del self.master.users[i]
+                break
         self.curuser -= 1
         if self.curuser == 0:
             print(
-                'SYSTEM: No client connect now! Server will exit in {} seconds.'
+                '[SYSTEM]No client connect now! Server will exit in {} seconds.'
                 .format(CONFIG.WAITTIME))
             self.timer = AutoShutDown.timer(self.server)
         pass
@@ -543,10 +585,14 @@ class Manager:
         self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server.bind((self.host, self.port))
         self.server.listen(self.maxconn)
-        print('SYSTEM: SERVER is listening on %s' % self.port)
+        self.log('[SYSTEM]SERVER is listening on %s' % self.port)
         self.deliver()
         while True:
-            conn, addr = self.server.accept()
+            try:
+                conn, addr = self.server.accept()
+            except OSError:
+                print('[SYSTEM]SERVER will exit in 0 second.')
+                break
             self.access(conn, addr)
         pass
 
@@ -563,6 +609,7 @@ def main():
         port = CONFIG.PORT
     one_server = Manager(host, port)
     one_server.start()
+    # print(active_count())
     pass
 
 
