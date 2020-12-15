@@ -45,7 +45,7 @@ If you need to use it, you can contact the author or the copyright owner of the 
 | 11 | Adapter Model and Abstract Class | [Plot Everything](https://github.com/HoBeedzc/MP_project/tree/master/week%2011)|
 | 12 | Multiprocessing | [News Dataset Load](https://github.com/HoBeedzc/MP_project/tree/master/week%2012)|
 | 13 | Multithreading | [51VOA Spider](https://github.com/HoBeedzc/MP_project/tree/master/week%2013) |
-| 14 |  |  |
+| 14 | Network Processing | [HoBeeChat Alpha](https://github.com/HoBeedzc/MP_project/tree/master/week%2014) |
 | 15 |  |  |
 | 16 |  |  |
 | 17 |  |  |
