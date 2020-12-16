@@ -1,7 +1,6 @@
 import socket
 from threading import Thread, active_count
 import queue
-import re
 import sys
 import time
 from functools import wraps
@@ -20,7 +19,7 @@ def show_run_state(func):
 
 class CONFIG:
     """
-
+    some global config and variables
     """
     PORT = 7240
     HOST = r'127.0.0.1'
@@ -36,8 +35,8 @@ class CONFIG:
     @staticmethod
     def time():
         """
-
-        :return:
+        get the local time with the specific format
+        :return: the local time with the specific format
         """
         now_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
         return now_time
@@ -45,7 +44,8 @@ class CONFIG:
 
 class Message:
     """
-
+    a class for message which used in HoBeeChat
+    instance variables: content, type_, subtype, from_, to_
     """
     def __init__(self, content, type_, subtype, from_, to_=None):
         self._type = type_
@@ -82,7 +82,8 @@ class Message:
 
 class AutoShutDown(Thread):
     """
-
+    a class for timer used in HoBeeChat.
+    The main function for this class is to automatically end the server.
     """
     def __init__(self, server: socket.socket):
         super().__init__()
@@ -121,8 +122,8 @@ class AutoShutDown(Thread):
     @classmethod
     def timer(cls, server):
         """
-
-        :return:
+        made a instance for class AutoShutDown. The timer will start automatically if you use this method.
+        :return: a instance for class AutoShutDown
         """
         temp = cls(server)
         temp.start()
@@ -131,7 +132,8 @@ class AutoShutDown(Thread):
 
 class UserDock(Thread):
     """
-
+    a class for HoBeeChat which manage users.
+    The instance for this class can send and receive message from client.
     """
     def __init__(self, conn, addr):
         super().__init__()
@@ -160,16 +162,16 @@ class UserDock(Thread):
 
     def send(self, message):
         """
-
-        :return:
+        send message to client.
+        :return: None
         """
         self.conn.send(message.encode(CONFIG.CODE))
         pass
 
     def receive(self):
         """
-
-        :return:
+        receive message from client
+        :return: None
         """
         self.curdata = self.conn.recv(CONFIG.RSIZE).decode(CONFIG.CODE)
         pass
@@ -177,8 +179,8 @@ class UserDock(Thread):
     @staticmethod
     def put(message: Message):
         """
-
-        :return:
+        put message into message queue to broadcast or mention.
+        :return: None
         """
         CONFIG.MESSAGE_QUEUE.put(message)
         pass
@@ -186,14 +188,16 @@ class UserDock(Thread):
     @staticmethod
     def put_none():
         """
-
-        :return:
+        put none into message queue as the end flag.
+        :return: None
         """
         CONFIG.MESSAGE_QUEUE.put(None)
         pass
 
     def process(self):
         """
+        process the message receive from the client.
+        :return: None for success, -1 for end
         """
         data = self.curdata
         if data == 'bye':
@@ -276,7 +280,7 @@ class UserDock(Thread):
 
 class Master(Thread):
     """
-
+    a class to manage all users in server
     """
     def __init__(self, server: socket.socket, manager):
         super().__init__()
@@ -303,10 +307,10 @@ class Master(Thread):
 
     def broadcast(self, user: UserDock.name, message):
         """
-
-        :param user:
-        :param message:
-        :return:
+        broadcast message for everyone in server
+        :param user: who send this message
+        :param message: the content of the message
+        :return: None
         """
         message = '[{}]'.format(user) + message
         for i in self.users:
@@ -317,11 +321,11 @@ class Master(Thread):
 
     def mention(self, from_: UserDock.name, to_: UserDock.name, message: str):
         """
-
-        :param from_:
-        :param to_:
-        :param message:
-        :return:
+        mention somebody in server
+        :param from_: who send this message
+        :param to_: who will be mentioned
+        :param message: content of message
+        :return: None
         """
         flag = 1
         message = '[{}]'.format(from_) + message
@@ -342,8 +346,8 @@ class Master(Thread):
 
     def get(self):
         """
-
-        :return:
+        get a message from the message queue
+        :return: -1 for break, 1 for continue, None for success
         """
         msg = CONFIG.MESSAGE_QUEUE.get()
         if msg is None:
@@ -356,8 +360,8 @@ class Master(Thread):
 
     def process(self):
         """
-
-        :return:
+        process the message from the message queue
+        :return: None
         """
         type_ = self.curmessage.type_
         subtype = self.curmessage.subtype
@@ -430,8 +434,8 @@ class Master(Thread):
     @staticmethod
     def log(message):
         """
-
-        :return:
+        log the process
+        :return: None
         """
         print(message)
         with open('.log', 'a+') as f:
@@ -453,7 +457,8 @@ class Master(Thread):
 
 class Manager:
     """
-
+    Main thread of program.
+    Manage the access and disconnect of client.
     """
     def __init__(self, host, port, maxconn=5):
         self._port = port
@@ -512,8 +517,8 @@ class Manager:
     @staticmethod
     def log(message):
         """
-
-        :return:
+        log the process
+        :return: None
         """
         message = '[{}]'.format(CONFIG.time()) + message
         print(message)
@@ -524,8 +529,8 @@ class Manager:
 
     def deliver(self):
         """
-
-        :return:
+        creat a instance for Master and start it.
+        :return: None
         """
         self.master = Master(self.server, self)
         self.master.start()
@@ -533,10 +538,10 @@ class Manager:
 
     def access(self, conn: socket.socket, addr: tuple) -> None:
         """
-
-        :param conn:
-        :param addr:
-        :return:
+        access a client
+        :param conn: connect for this client
+        :param addr: address for this client
+        :return: None
         """
         temp_user = UserDock(conn, addr)
         temp_user.start()
@@ -558,8 +563,8 @@ class Manager:
 
     def suspend(self, name: str):
         """
-
-        :return:
+        disconnect a client
+        :return: None
         """
         self.master.broadcast(name,
                               '[SYSTEM]{} left the group chat...'.format(name))
@@ -579,8 +584,8 @@ class Manager:
 
     def start(self):
         """
-
-        :return:
+        start the server
+        :return: None
         """
         self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server.bind((self.host, self.port))

@@ -10,7 +10,7 @@ class ClientConnectError(OSError):
 
 class CONFIG:
     """
-
+    some global config and variables
     """
     WELCOME = """\nWelcome to HoBeeChat alpha 0.0.1\nhttps://www.github.com/HoBeedzc\nHave fun!"""
     PORT = 7240
@@ -24,8 +24,8 @@ class CONFIG:
     @staticmethod
     def time():
         """
-
-        :return:
+        get the local time with the specific format
+        :return: the local time with the specific format
         """
         now_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
         return now_time
@@ -33,7 +33,7 @@ class CONFIG:
 
 class Sender(Thread):
     """
-
+    a class which used to send message to server
     """
     def __init__(self, client: socket.socket):
         super().__init__()
@@ -43,8 +43,8 @@ class Sender(Thread):
 
     def get_message(self, delay=0.1):
         """
-
-        :return:
+        get message from command line.
+        :return: None
         """
         time.sleep(delay)
         msg = ''
@@ -56,8 +56,8 @@ class Sender(Thread):
 
     def send(self):
         """
-
-        :return:
+        send message to server
+        :return: None
         """
         data = self.curmessage.encode(CONFIG.CODE)
         self.client.send(data)
@@ -75,7 +75,7 @@ class Sender(Thread):
 
 class Receiver(Thread):
     """
-
+    a class used to receive message from server.
     """
     def __init__(self, client: socket.socket):
         super().__init__()
@@ -85,8 +85,8 @@ class Receiver(Thread):
 
     def recv(self):
         """
-
-        :return:
+        receive message from server
+        :return: None
         """
         data = self.client.recv(CONFIG.RSIZE)
         self.curmessage = data.decode(CONFIG.CODE)
@@ -94,8 +94,8 @@ class Receiver(Thread):
 
     def show(self):
         """
-
-        :return:
+        show message to command line
+        :return: None
         """
         print('\r', end='')
         print('[{}]'.format(CONFIG.time()) + self.curmessage)
@@ -116,17 +116,9 @@ class Receiver(Thread):
         pass
 
 
-class Master(Thread):
-    """
-
-    """
-    def __init__(self):
-        super().__init__()
-        pass
-
-
 class Chatter:
     """
+    Main thread of program
     """
     def __init__(self, ip, port):
         self._client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -150,8 +142,9 @@ class Chatter:
 
     def deliver(self):
         """
-
-        :return:
+        creat a instance for Sender and start it.
+        creat a instance for Receiver and start it.
+        :return: None
         """
         self.sender = Sender(self.client)
         self.receiver = Receiver(self.client)
@@ -162,8 +155,8 @@ class Chatter:
 
     def start(self):
         """
-
-        :return:
+        start the client
+        :return: None
         """
         print(CONFIG.WELCOME)
         print('>>>:', end='')
