@@ -5,6 +5,8 @@ import sys
 import time
 from functools import wraps
 
+class ServerConnectError(OSError):
+    pass
 
 def show_run_state(func):
     @wraps(func)
@@ -438,7 +440,7 @@ class Master(Thread):
         :return: None
         """
         print(message)
-        with open('.log', 'a+') as f:
+        with open('server.log', 'a+') as f:
             f.write(message)
             f.write('\n')
         pass
@@ -518,11 +520,12 @@ class Manager:
     def log(message):
         """
         log the process
+        :message: the infomation you want to log
         :return: None
         """
         message = '[{}]'.format(CONFIG.time()) + message
         print(message)
-        with open('.log', 'a+') as f:
+        with open('server.log', 'a+') as f:
             f.write(message)
             f.write('\n')
         pass
@@ -595,6 +598,8 @@ class Manager:
         while True:
             try:
                 conn, addr = self.server.accept()
+                if conn is None:
+                    continue
             except OSError:
                 print('[SYSTEM]SERVER will exit in 0 second.')
                 break

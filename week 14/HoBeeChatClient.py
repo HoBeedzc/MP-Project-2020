@@ -63,9 +63,20 @@ class Sender(Thread):
         self.client.send(data)
         pass
 
+    def log(self):
+        """
+        log the process
+        :return: None
+        """
+        with open('client.log', 'a+') as f:
+            f.write('[{}][ME]'.format(CONFIG.time()) + self.curmessage)
+            f.write('\n')
+        pass
+
     def run(self):
         while True:
             self.get_message()
+            self.log()
             self.send()
             if self.curmessage == '@exit':
                 break
@@ -98,8 +109,21 @@ class Receiver(Thread):
         :return: None
         """
         print('\r', end='')
-        print('[{}]'.format(CONFIG.time()) + self.curmessage)
+        self.log('[{}]'.format(CONFIG.time()) + self.curmessage)
         print('>>>:', end='', flush=True)
+        pass
+
+    @staticmethod
+    def log(message):
+        """
+        log the process
+        :message: the infomation you want to log
+        :return: None
+        """
+        print(message)
+        with open('client.log', 'a+') as f:
+            f.write(message)
+            f.write('\n')
         pass
 
     def run(self):
@@ -110,9 +134,9 @@ class Receiver(Thread):
                 print('The receiver closed by Server...')
                 break
             self.show()
-            if self.curmessage == '[SYSTEM]Goodbye.':
+            if self.curmessage == '':
+                print('The receiver has stopped working...')
                 break
-        print('The receiver has stopped working...')
         pass
 
 
