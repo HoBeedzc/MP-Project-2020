@@ -5,6 +5,8 @@ from functools import wraps
 class CONFIG:
     """
     """
+
+    @staticmethod
     def yeild_init(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -14,11 +16,24 @@ class CONFIG:
 
         return wrapper
 
+class Result:
+    """
+
+    """
+
+    def __init__(self,name,path,line,content):
+        self.name = name
+        self.path = path
+        self.line = line
+        self.content = content
+        pass
 
 class Search:
     """
     """
-    pass
+
+    def __init__(self):
+        pass
 
 
 class Reader:
@@ -32,6 +47,13 @@ class Hit:
     """
     pass
 
+class TextSearch(Search):
+    """
+
+    """
+    def __init__(self):
+        super().__init__()
+        pass
 
 class SearchResult:
     """
