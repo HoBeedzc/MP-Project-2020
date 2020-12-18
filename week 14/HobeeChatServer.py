@@ -5,8 +5,10 @@ import sys
 import time
 from functools import wraps
 
+
 class ServerConnectError(OSError):
     pass
+
 
 def show_run_state(func):
     @wraps(func)
@@ -49,6 +51,7 @@ class Message:
     a class for message which used in HoBeeChat
     instance variables: content, type_, subtype, from_, to_
     """
+
     def __init__(self, content, type_, subtype, from_, to_=None):
         self._type = type_
         self._subtype = subtype
@@ -87,6 +90,7 @@ class AutoShutDown(Thread):
     a class for timer used in HoBeeChat.
     The main function for this class is to automatically end the server.
     """
+
     def __init__(self, server: socket.socket):
         super().__init__()
         self._flag = True
@@ -137,6 +141,7 @@ class UserDock(Thread):
     a class for HoBeeChat which manage users.
     The instance for this class can send and receive message from client.
     """
+
     def __init__(self, conn, addr):
         super().__init__()
         self._name = "client-" + addr[0] + "-" + str(addr[1])
@@ -284,6 +289,7 @@ class Master(Thread):
     """
     a class to manage all users in server
     """
+
     def __init__(self, server: socket.socket, manager):
         super().__init__()
         self._server = server
@@ -321,12 +327,13 @@ class Master(Thread):
             i.send(message)
         pass
 
-    def mention(self, from_: UserDock.name, to_: UserDock.name, message: str):
+    def mention(self, from_: UserDock.name, to_: UserDock.name, message: str, all_flag=False):
         """
         mention somebody in server
         :param from_: who send this message
         :param to_: who will be mentioned
         :param message: content of message
+        :param all_flag: to mark whether this message is all message
         :return: None
         """
         flag = 1
@@ -341,6 +348,8 @@ class Master(Thread):
                 to_)
         else:
             re_msg = '[SYSTEM]Successfully send a message to {} '.format(to_)
+        if all_flag:
+            return -1
         for i in self.users:
             if i.name == from_:
                 i.send(re_msg)
@@ -402,12 +411,14 @@ class Master(Thread):
                 self.log('[{}][{}] send a message to everyone : {}'.format(
                     time_, from_, content))
                 for i in self.users:
-                    self.mention(from_, i.name, content)
+                    if i.name == from_:
+                        continue
+                    self.mention(from_, i.name, content, all_flag=True)
                 pass
             elif subtype == 'important':
                 self.log(
                     '[{}][{}] send an important message to group chat : {}'.
-                    format(time_, from_, content))
+                        format(time_, from_, content))
                 for _ in range(3):
                     self.broadcast(from_, content)
                 pass
@@ -424,7 +435,7 @@ class Master(Thread):
             else:
                 self.log(
                     '[{}][{}] send an invalid ordinary message subtype: {}'.
-                    format(time_, from_, subtype))
+                        format(time_, from_, subtype))
                 pass
             pass
         else:
@@ -462,6 +473,7 @@ class Manager:
     Main thread of program.
     Manage the access and disconnect of client.
     """
+
     def __init__(self, host, port, maxconn=5):
         self._port = port
         self._host = host
@@ -581,7 +593,7 @@ class Manager:
         if self.curuser == 0:
             print(
                 '[SYSTEM]No client connect now! Server will exit in {} seconds.'
-                .format(CONFIG.WAITTIME))
+                    .format(CONFIG.WAITTIME))
             self.timer = AutoShutDown.timer(self.server)
         pass
 

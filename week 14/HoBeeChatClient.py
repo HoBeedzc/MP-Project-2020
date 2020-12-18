@@ -117,7 +117,7 @@ class Receiver(Thread):
     def log(message):
         """
         log the process
-        :message: the infomation you want to log
+        :message: the information you want to log
         :return: None
         """
         print(message)
