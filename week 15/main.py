@@ -20,7 +20,10 @@ class CONFIG:
     KEY_TYPE = TEXT_FILE
     KEY_WORD = 'HoBee'
     FLOAT_LENGTH = 20
-    ROOT_PATH = '../'
+    ROOT_PATH = './'
+    SEARCHED_FILES = 0
+    OPENED_FILES = 0
+    READ_LINES = 0
 
 
 class Result:
@@ -41,7 +44,6 @@ class Result:
 class Searcher:
     """
     """
-
     def __init__(self):
         pass
 
@@ -53,6 +55,7 @@ class Searcher:
         g = os.walk(path)
         for _dir, _, files in g:
             for file in files:
+                CONFIG.SEARCHED_FILES += 1
                 ext = os.path.splitext(file)[-1]
                 if ext in CONFIG.KEY_TYPE:
                     file_path = os.path.join(_dir, file)
@@ -66,14 +69,14 @@ class Opener:
     """
     a parent class for open files
     """
-
     def __init__(self):
         pass
 
     @staticmethod
     async def _check_title(filepath):
         fname, etx = os.path.splitext(filepath)
-        name_ = fname.split(r'/')[-1] + etx
+        fname = fname.replace('\\', '/')  # 解决win和mac运行时的兼容性问题
+        name_ = fname.split('/')[-1] + etx
         res = re.search(CONFIG.KEY_WORD, name_)
         if res is None:
             pass
@@ -91,33 +94,58 @@ class TextOpener(Opener):
     """
 
     """
-
     def __init__(self):
         super(TextOpener, self).__init__()
         pass
 
     @staticmethod
     async def open(filepath):
+        # print(filepath)
         await TextOpener._check_title(filepath)
         try:
             with open(filepath, 'r', encoding='utf-8') as f:
+                CONFIG.OPENED_FILES += 1
                 await TextReader.read(filepath, f)
         except UnicodeDecodeError:
             try:
                 with open(filepath, 'r', encoding='gbk') as f:
+                    CONFIG.OPENED_FILES += 1
                     await TextReader.read(filepath, f)
             except UnicodeDecodeError:
+                # print('UnicodeDecodeError:{}'.format(filepath))
                 pass
+        except FileNotFoundError:
+            # print('FileNotFoundError:{}'.format(filepath))
+            pass
+        except OSError:
+            # print('OSError:{}'.format(filepath))
+            pass
         except PermissionError:
+            # print('PermissionError:{}'.format(filepath))
             pass
         pass
+
+
+class WordOpener(Opener):
+    pass
+
+
+class ExcelOpener(Opener):
+    pass
+
+
+class PPTOpener(Opener):
+    pass
+
+
+class PDFOpener(Opener):
+    pass
 
 
 class Reader:
     """
     a parent class for read files
     """
-
     def __init__(self):
         pass
 
@@ -130,7 +158,6 @@ class TextReader(Reader):
     """
 
     """
-
     def __init__(self):
         super(TextReader, self).__init__()
         pass
@@ -151,12 +178,15 @@ class TextReader(Reader):
 class Judger:
     """
     """
-
     def __init__(self):
         pass
 
     @staticmethod
-    async def judge(filepath, line_number, content, search_for=CONFIG.KEY_WORD):
+    async def judge(filepath,
+                    line_number,
+                    content,
+                    search_for=CONFIG.KEY_WORD):
+        CONFIG.READ_LINES += 1
         res = re.search(search_for, content)
         if res is None:
             return 0
@@ -164,8 +194,10 @@ class Judger:
             li, ri = res.span()
             li_n = max(0, li - CONFIG.FLOAT_LENGTH)
             ri_n = min(len(content), ri + CONFIG.FLOAT_LENGTH)
-            new_con = content[li_n:li] + '==' + res.group(0) + '==' + content[ri:ri_n + 1]
+            new_con = content[li_n:li] + '==' + res.group(
+                0) + '==' + content[ri:ri_n + 1]
             fname, etx = os.path.splitext(filepath)
+            fname = fname.replace('\\', '/')
             name_ = fname.split(r'/')[-1] + etx
             resc = Result(name_, filepath, line_number, new_con)
             await Hitter.hit(resc)
@@ -173,24 +205,39 @@ class Judger:
         pass
 
 
+class WordJudger(Judger):
+    pass
+
+
+class ExcelJudger(Judger):
+    pass
+
+
+class PPTJudger(Judger):
+    pass
+
+
+class PDFJudger(Judger):
+    pass
+
+
 class Hitter:
     """
     a parent class for hit
     """
-
     def __init__(self):
         pass
 
     @staticmethod
     async def hit(resc):
-        print('{}, {}, {}, {}, {}'.format(resc.id, resc.name, resc.path, resc.line, resc.content))
+        print('{}, {}, {}, {}, {}'.format(resc.id, resc.name, resc.path,
+                                          resc.line, resc.content))
         pass
 
 
 class LoaclMiner:
     """
     """
-
     def __init__(self, path='', type_='', search_for='', float_=''):
         self.path = path
         self.type = type_
@@ -206,14 +253,19 @@ class LoaclMiner:
         if self.search_for != '':
             CONFIG.KEY_WORD = self.search_for
         if self.type != '':
-            all_type = [CONFIG.TEXT_FILE, CONFIG.WORD_FILE, CONFIG.EXCEL_FILE, CONFIG.PPT_FILE, CONFIG.PDF_FILE]
+            all_type = [
+                CONFIG.TEXT_FILE, CONFIG.WORD_FILE, CONFIG.EXCEL_FILE,
+                CONFIG.PPT_FILE, CONFIG.PDF_FILE
+            ]
             if self.type in ['1', '2', '3', '4']:
                 CONFIG.KEY_TYPE = all_type[int(self.type)]
             else:
                 try:
-                    new_type = re.search(r'\.[A-Za-z0-9]+$', self.type).group(0)
+                    new_type = re.search(r'\.[A-Za-z0-9]+$',
+                                         self.type).group(0)
                 except AttributeError:
-                    raise SearchTypeError('Can not find {} file!'.format(self.type))
+                    raise SearchTypeError('Can not find {} file!'.format(
+                        self.type))
                 CONFIG.KEY_WORD = [new_type]
 
     def _async_loop(self):
@@ -223,16 +275,25 @@ class LoaclMiner:
         self.loop.close()
         pass
 
+    @staticmethod
+    def _summary(end, start):
+        print('Summary:')
+        print('Search time : {}'.format(end - start))
+        print('Search Files : {}'.format(CONFIG.SEARCHED_FILES))
+        print('Open Files : {}'.format(CONFIG.OPENED_FILES))
+        print('Read Lines : {}'.format(CONFIG.READ_LINES))
+        print('Find Result : {}'.format(Result.ID - 1))
+
     def start(self):
         self._set_config()
-        print(
-            'Start to search {} in {} file from path {} ...'.format(CONFIG.KEY_WORD, CONFIG.KEY_TYPE, CONFIG.ROOT_PATH))
+        print('Start to search {} in {} file from path {} ...'.format(
+            CONFIG.KEY_WORD, CONFIG.KEY_TYPE, CONFIG.ROOT_PATH))
         print('Result:')
         print('ID, NAME, PATH, LINE NUMBER, CONTENT')
         start = time.time()
         self._async_loop()
         end = time.time()
-        print('Search time : {}'.format(end - start))
+        self._summary(end, start)
         pass
 
 
