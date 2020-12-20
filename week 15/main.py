@@ -1,27 +1,26 @@
 import asyncio
-from functools import wraps
 import os
 import re
 import sys
+import time
+
+
+class SearchTypeError(ValueError):
+    pass
 
 
 class CONFIG:
     """
     """
-    TEXT_FILE = ['.txt', '.csv', '.java', '.c', '.py', '.md', '.tex']
+    TEXT_FILE = ['.txt', '.csv', '.java', '.c', '.py', '.md', '.tex', '.sql']
     WORD_FILE = ['.doc', '.docx']
+    EXCEL_FILE = ['.xls', 'xlsx']
+    PPT_FILE = ['.ppt', '.pptx']
+    PDF_FILE = ['.pdf']
+    KEY_TYPE = TEXT_FILE
     KEY_WORD = 'HoBee'
-    FLOAT_LENGTH = 3
-
-    @staticmethod
-    def yeild_init(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            res = func(*args, **kwargs)
-            next(res)
-            return res
-
-        return wrapper
+    FLOAT_LENGTH = 20
+    ROOT_PATH = '../'
 
 
 class Result:
@@ -47,23 +46,19 @@ class Searcher:
         pass
 
     @staticmethod
-    async def search(path):
+    async def search():
         """
         """
-        while True:
-            # path = yield  # 获取参数
-            g = os.walk(path)
-            for _dir, _, files in g:
-                for file in files:
-                    ext = os.path.splitext(file)[-1]
-                    if ext in CONFIG.TEXT_FILE:
-                        file_path = os.path.join(_dir, file)
-                        await TextOpener.open(file_path)  # 传值给别的生成器
-                    elif ext in CONFIG.WORD_FILE:
-                        file_path = os.path.join(_dir, file)
-                        await TextOpener.open(file_path)
-                    else:
-                        continue
+        path = CONFIG.ROOT_PATH
+        g = os.walk(path)
+        for _dir, _, files in g:
+            for file in files:
+                ext = os.path.splitext(file)[-1]
+                if ext in CONFIG.KEY_TYPE:
+                    file_path = os.path.join(_dir, file)
+                    await TextOpener.open(file_path)  # 传值给别的生成器
+                else:
+                    continue
         pass
 
 
@@ -76,7 +71,15 @@ class Opener:
         pass
 
     @staticmethod
-    def _check_title(filepath):
+    async def _check_title(filepath):
+        fname, etx = os.path.splitext(filepath)
+        name_ = fname.split(r'/')[-1] + etx
+        res = re.search(CONFIG.KEY_WORD, name_)
+        if res is None:
+            pass
+        else:
+            resc = Result(name_, filepath, 'title', name_)
+            await Hitter.hit(resc)
         pass
 
     @staticmethod
@@ -95,9 +98,18 @@ class TextOpener(Opener):
 
     @staticmethod
     async def open(filepath):
-        TextOpener._check_title(filepath)
-        with open(filepath, 'r') as f:
-            await TextReader.read(filepath, f)
+        await TextOpener._check_title(filepath)
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                await TextReader.read(filepath, f)
+        except UnicodeDecodeError:
+            try:
+                with open(filepath, 'r', encoding='gbk') as f:
+                    await TextReader.read(filepath, f)
+            except UnicodeDecodeError:
+                pass
+        except PermissionError:
+            pass
         pass
 
 
@@ -128,6 +140,7 @@ class TextReader(Reader):
         i = 0
         for line in f:
             i += 1
+            line = line.strip()
             flag = await Judger.judge(filepath, i, line)
             if flag:
                 break
@@ -143,15 +156,15 @@ class Judger:
         pass
 
     @staticmethod
-    async def judge(filepath, line_number, content):
-        res = re.search(CONFIG.KEY_WORD, content)
+    async def judge(filepath, line_number, content, search_for=CONFIG.KEY_WORD):
+        res = re.search(search_for, content)
         if res is None:
             return 0
         else:
             li, ri = res.span()
             li_n = max(0, li - CONFIG.FLOAT_LENGTH)
             ri_n = min(len(content), ri + CONFIG.FLOAT_LENGTH)
-            new_con = content[li_n:li] + '==' + res.group(0) + '==' + content[ri + 1:ri_n]
+            new_con = content[li_n:li] + '==' + res.group(0) + '==' + content[ri:ri_n + 1]
             fname, etx = os.path.splitext(filepath)
             name_ = fname.split(r'/')[-1] + etx
             resc = Result(name_, filepath, line_number, new_con)
@@ -170,7 +183,7 @@ class Hitter:
 
     @staticmethod
     async def hit(resc):
-        print('{},{},{},{},{}'.format(resc.id, resc.name, resc.path, resc.line, resc.content))
+        print('{}, {}, {}, {}, {}'.format(resc.id, resc.name, resc.path, resc.line, resc.content))
         pass
 
 
@@ -178,11 +191,70 @@ class LoaclMiner:
     """
     """
 
-    def __init__(self):
+    def __init__(self, path='', type_='', search_for='', float_=''):
+        self.path = path
+        self.type = type_
+        self.search_for = search_for
+        self.float = float_
+        pass
+
+    def _set_config(self):
+        if self.path != '':
+            CONFIG.ROOT_PATH = self.path
+        if self.float != '':
+            CONFIG.FLOAT_LENGTH = self.float
+        if self.search_for != '':
+            CONFIG.KEY_WORD = self.search_for
+        if self.type != '':
+            all_type = [CONFIG.TEXT_FILE, CONFIG.WORD_FILE, CONFIG.EXCEL_FILE, CONFIG.PPT_FILE, CONFIG.PDF_FILE]
+            if self.type in ['1', '2', '3', '4']:
+                CONFIG.KEY_TYPE = all_type[int(self.type)]
+            else:
+                try:
+                    new_type = re.search(r'\.[A-Za-z0-9]+$', self.type).group(0)
+                except AttributeError:
+                    raise SearchTypeError('Can not find {} file!'.format(self.type))
+                CONFIG.KEY_WORD = [new_type]
+
+    def _async_loop(self):
+        self.loop = asyncio.get_event_loop()
+        self.tasks = [Searcher.search()]
+        self.loop.run_until_complete(asyncio.wait(self.tasks))
+        self.loop.close()
+        pass
+
+    def start(self):
+        self._set_config()
+        print(
+            'Start to search {} in {} file from path {} ...'.format(CONFIG.KEY_WORD, CONFIG.KEY_TYPE, CONFIG.ROOT_PATH))
+        print('Result:')
+        print('ID, NAME, PATH, LINE NUMBER, CONTENT')
+        start = time.time()
+        self._async_loop()
+        end = time.time()
+        print('Search time : {}'.format(end - start))
         pass
 
 
 def main():
+    try:
+        path = sys.argv[1]
+    except IndexError:
+        path = ''
+    try:
+        type_ = sys.argv[2]
+    except IndexError:
+        type_ = ''
+    try:
+        search_for = sys.argv[3]
+    except IndexError:
+        search_for = ''
+    try:
+        float_ = int(sys.argv[4])
+    except IndexError:
+        float_ = ''
+    test = LoaclMiner(path, type_, search_for, float_)
+    test.start()
     pass
 
 
