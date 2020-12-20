@@ -11,6 +11,7 @@ class SearchTypeError(ValueError):
 
 class CONFIG:
     """
+    some global config and variables
     """
     TEXT_FILE = ['.txt', '.csv', '.java', '.c', '.py', '.md', '.tex', '.sql']
     WORD_FILE = ['.doc', '.docx']
@@ -28,6 +29,8 @@ class CONFIG:
 
 class Result:
     """
+    a class for search result which used in this file
+    instance variables: id, name, path, line, content
     """
     ID = 0
 
@@ -43,6 +46,7 @@ class Result:
 
 class Searcher:
     """
+    a class for searching files in harddisk
     """
     def __init__(self):
         pass
@@ -92,7 +96,7 @@ class Opener:
 
 class TextOpener(Opener):
     """
-
+    a subclass for open flies which used for text file
     """
     def __init__(self):
         super(TextOpener, self).__init__()
@@ -156,7 +160,7 @@ class Reader:
 
 class TextReader(Reader):
     """
-
+    a subclass for read files which used for text files
     """
     def __init__(self):
         super(TextReader, self).__init__()
@@ -177,6 +181,7 @@ class TextReader(Reader):
 
 class Judger:
     """
+    a class for judging the file whether include key words or not
     """
     def __init__(self):
         pass
@@ -223,7 +228,7 @@ class PDFJudger(Judger):
 
 class Hitter:
     """
-    a parent class for hit
+    a class for show the search result to users
     """
     def __init__(self):
         pass
@@ -237,6 +242,7 @@ class Hitter:
 
 class LoaclMiner:
     """
+    a main class for this program
     """
     def __init__(self, path='', type_='', search_for='', float_=''):
         self.path = path
