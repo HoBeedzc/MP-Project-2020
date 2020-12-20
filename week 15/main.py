@@ -20,6 +20,7 @@ class CONFIG:
     PDF_FILE = ['.pdf']
     KEY_TYPE = TEXT_FILE
     KEY_WORD = 'HoBee'
+    IF_TITLE = True
     FLOAT_LENGTH = 20
     ROOT_PATH = './'
     SEARCHED_FILES = 0
@@ -48,6 +49,7 @@ class Searcher:
     """
     a class for searching files in harddisk
     """
+
     def __init__(self):
         pass
 
@@ -73,6 +75,7 @@ class Opener:
     """
     a parent class for open files
     """
+
     def __init__(self):
         pass
 
@@ -98,6 +101,7 @@ class TextOpener(Opener):
     """
     a subclass for open flies which used for text file
     """
+
     def __init__(self):
         super(TextOpener, self).__init__()
         pass
@@ -105,7 +109,8 @@ class TextOpener(Opener):
     @staticmethod
     async def open(filepath):
         # print(filepath)
-        await TextOpener._check_title(filepath)
+        if CONFIG.IF_TITLE:
+            await TextOpener._check_title(filepath)
         try:
             with open(filepath, 'r', encoding='utf-8') as f:
                 CONFIG.OPENED_FILES += 1
@@ -123,9 +128,6 @@ class TextOpener(Opener):
             pass
         except OSError:
             # print('OSError:{}'.format(filepath))
-            pass
-        except PermissionError:
-            # print('PermissionError:{}'.format(filepath))
             pass
         pass
 
@@ -150,6 +152,7 @@ class Reader:
     """
     a parent class for read files
     """
+
     def __init__(self):
         pass
 
@@ -162,6 +165,7 @@ class TextReader(Reader):
     """
     a subclass for read files which used for text files
     """
+
     def __init__(self):
         super(TextReader, self).__init__()
         pass
@@ -183,6 +187,7 @@ class Judger:
     """
     a class for judging the file whether include key words or not
     """
+
     def __init__(self):
         pass
 
@@ -230,6 +235,7 @@ class Hitter:
     """
     a class for show the search result to users
     """
+
     def __init__(self):
         pass
 
@@ -244,11 +250,13 @@ class LoaclMiner:
     """
     a main class for this program
     """
-    def __init__(self, path='', type_='', search_for='', float_=''):
+
+    def __init__(self, path='', type_='', search_for='', float_='', stype=''):
         self.path = path
         self.type = type_
         self.search_for = search_for
         self.float = float_
+        self.search_type = stype
         pass
 
     def _set_config(self):
@@ -258,6 +266,8 @@ class LoaclMiner:
             CONFIG.FLOAT_LENGTH = self.float
         if self.search_for != '':
             CONFIG.KEY_WORD = self.search_for
+        if self.search_type != '':
+            CONFIG.IF_TITLE = self.search_type
         if self.type != '':
             all_type = [
                 CONFIG.TEXT_FILE, CONFIG.WORD_FILE, CONFIG.EXCEL_FILE,
@@ -317,10 +327,14 @@ def main():
     except IndexError:
         search_for = ''
     try:
-        float_ = int(sys.argv[4])
+        stype = int(sys.argv[4])
+    except IndexError:
+        stype = ''
+    try:
+        float_ = int(sys.argv[5])
     except IndexError:
         float_ = ''
-    test = LoaclMiner(path, type_, search_for, float_)
+    test = LoaclMiner(path, type_, search_for, float_, stype)
     test.start()
     pass
 
