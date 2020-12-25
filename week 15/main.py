@@ -273,7 +273,7 @@ class LoaclMiner:
                 CONFIG.TEXT_FILE, CONFIG.WORD_FILE, CONFIG.EXCEL_FILE,
                 CONFIG.PPT_FILE, CONFIG.PDF_FILE
             ]
-            if self.type in ['1', '2', '3', '4']:
+            if self.type in ['0', '1', '2', '3', '4']:
                 CONFIG.KEY_TYPE = all_type[int(self.type)]
             else:
                 try:
@@ -327,7 +327,7 @@ def main():
     except IndexError:
         search_for = ''
     try:
-        stype = int(sys.argv[4])
+        stype = sys.argv[4]
     except IndexError:
         stype = ''
     try:
