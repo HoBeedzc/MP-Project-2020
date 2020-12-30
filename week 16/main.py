@@ -1,3 +1,4 @@
+import os
 import sys
 import pymongo
 from threading import Thread
@@ -13,16 +14,17 @@ class UrlResponError(OSError):
 
 
 class CONFIG:
-    '''
+    """
     class CONFIG
-    '''
+    """
     TOTAL_PAGES = 21
     ROOT_DOMAIN = r'https://www.51voa.com'
     SUB_URL = r'/VOA_Special_English/'
     MASTR_URL = r'https://www.51voa.com/This_is_America_{}.html'
     HEAD = {
         'user-agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36'
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 '
+        'Safari/537.36 '
     }
     URL_QUEUE = queue.Queue()
     MP3_QUEUE = queue.Queue()
@@ -32,13 +34,12 @@ class CONFIG:
     COMPLETE_LIST = [i for i in range(0, TOTAL_PAGES + 1)]
     COMPLETE_MP3 = [[0 for __ in range(50)]] + [[1 for __ in range(50)]
                                                 for _ in range(0, TOTAL_PAGES)]
-    LOCK = Lock()
 
     @staticmethod
     def refresh_status():
-        '''
+        """
         目标数据爬取状态刷新
-        '''
+        """
         with CONFIG.LOCK:
             for i in range(len(CONFIG.COMPLETE_MP3)):
                 if sum(CONFIG.COMPLETE_MP3[i]) == 0:
@@ -47,11 +48,11 @@ class CONFIG:
 
     @staticmethod
     def get_html(url):
-        '''
+        """
         获取目标网页 html 源码
         :param url: 要访问的网站 url
         :return: 基于 requests 库的返回结果
-        '''
+        """
         # url = re.sub(r'\.[0-9a-zA-z]*\.com', '.51voa.com', url)
         for i in range(11):
             try:
@@ -153,6 +154,7 @@ class ArticleSpider(Thread):
         self.curdict = None
         self.curtitle = None
         self.cururl = None
+        self.curpageinfo = None
         pass
 
     def get_urls_dict(self):
@@ -176,19 +178,24 @@ class ArticleSpider(Thread):
         self.r = CONFIG.get_html(self.cururl)
         pass
 
-    def get_article(self, save_to):
+    def get_page_info(self):
         '''
         获取要爬取的文章的内容
-        :param save_to: 文件储存路径
         :return: None
         '''
         r = self.r
+        self.curpageinfo = {}
         r.encoding = 'utf-8'
         soup = bs(r.content, 'lxml')
         article = soup.find('div', class_='Content')
         author = article.find('span', class_='byline')
         datetime = article.find('span', class_='datetime')
         res = []
+        mp3_url = soup.find('div', class_='menubar')
+        try:  # 尝试获取MP3url
+            mp3url = mp3_url.find('a', id='mp3').get('href')
+        except AttributeError:
+            mp3url = None
         if author is None:  # 确定网页中是否有创作者信息
             pass
         else:
@@ -199,43 +206,14 @@ class ArticleSpider(Thread):
             res.append(datetime.text)
         for i in article.find_all('p'):
             res.append(' '.join(i.text.split()))
-        with open(save_to, 'w', encoding='utf-8') as f:
-            f.write(self.curtitle)
-            f.write('\n')
-            for i in res:
-                f.write(i)
-                f.write('\n')
-            f.flush()
         pass
 
-    def get_page_info(self):
+    def send_page_info(self):
         '''
-        获取要爬取的 MP3 信息
-        :return: 要爬取的 MP3 信息 （以字典形式存放） 
-        '''
-        r = self.r
-        r.encoding = 'utf-8'
-        soup = bs(r.content, 'lxml')
-        mp3_url = soup.find('div', class_='menubar')
-        try:  # 尝试获取MP3url
-            mp3url = mp3_url.find('a', id='mp3').get('href')
-        except AttributeError:
-            mp3url = None
-        mp3_info_dict = {
-            'No': self.curnum,
-            'subNo': self.curmp3num,
-            'title': self.curtitle,
-            'mp3': mp3url
-        }
-        return mp3_info_dict
-
-    def send_page_info(self, mp3_info_dict):
-        '''
-        将 MP3 信息放入 MP3 队列
-        :param mp3_info_dict: 要放入的 MP3 信息
+        将 mp3 信息放入 mp3 队列
         :return: None
         '''
-        CONFIG.MP3_QUEUE.put(mp3_info_dict)
+        CONFIG.MP3_QUEUE.put(self.curpageinfo)
         pass
 
     def send_none(self):
@@ -256,14 +234,28 @@ class ArticleSpider(Thread):
                 for self.curtitle, self.cururl in self.curdict.items():
                     self.curmp3num += 1
                     self.get_url()
-                    mp3_info = self.get_page_info()
-                    self.send_page_info(mp3_info)
+                    self.get_page_info()
+                    self.send_page_info()
         self.send_none()
         pass
 
 
 class VOADataBase(Thread):
-    pass
+    """
+    class VOADataBase, a subclass for Thread.
+    """
+    def __init__(self):
+        super().__init__()
+        pass
+
+    def get_page_info(self):
+        pass
+
+    def write_page_info(self):
+        pass
+
+    def run(self):
+        pass
 
 
 class SpiderMonitor:
@@ -342,7 +334,8 @@ class SpiderMonitor:
         while True:
             flag = self.get_state()
             os.system('cls')
-            stat = '''Run Time : {} s\nSpider Rate : {}/{}\nMemory Usaged : {} MB\nRemain Time : {} s, Remain Menory : {} MB\nNumer of Running Spiders : {}'''.format(
+            stat = '''Run Time : {} s\nSpider Rate : {}/{}\nMemory Usaged : {} MB\nRemain Time : {} s, Remain Menory 
+            : {} MB\nNumer of Running Spiders : {}'''.format(
                 self.run_time, self.cnt_num, self.num_of_files,
                 self.cnt_mem / (1024 * 1024), self.remain_time,
                 self.remain_mem / (1024 * 1024),
