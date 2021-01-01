@@ -1,5 +1,4 @@
 import os
-import sys
 import pymongo
 from threading import Thread
 import queue
@@ -305,6 +304,7 @@ class VOADataBase(Thread):
                 self.write_page_info()
                 self.send_message()
         self.send_none()
+        self.db.close()
         pass
 
 
