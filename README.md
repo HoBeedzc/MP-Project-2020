@@ -15,7 +15,12 @@
 
 This repository includes all codes and slides in the course "Modern Programming 2020", excluding term project.
 
+## Attention
+
+**Since the course has been completed, this repository will no longer be maintained.**
+
 ## Notice
+
 Sorry, due to copyright reasons, since November 27, 2020, this repository will no longer provide data sets used in the code and some code file copied from internet.
 
 Affected File :
