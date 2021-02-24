@@ -1,5 +1,5 @@
 <h1 align='center' herf='https://github.com/HoBeedzc/MP_project'>
-    BUAA Modern Programming Project 2020
+    BUAA SEM Modern Programming Project 2020
 </h1>
 
 <div align='center'>
